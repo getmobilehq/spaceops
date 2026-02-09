@@ -1,0 +1,294 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { User, MoreVertical, Shield, Ban, CheckCircle2, Building2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
+import type { UserProfile, Building, BuildingAssignment } from "@/lib/types/helpers";
+import type { UserRole } from "@/lib/types/database";
+
+interface UserListProps {
+  users: UserProfile[];
+  currentUserId: string;
+  buildings: Building[];
+  assignments: BuildingAssignment[];
+}
+
+const roleBadgeColors: Record<string, string> = {
+  admin: "bg-primary-100 text-primary-700",
+  supervisor: "bg-info-bg text-info border border-info-border",
+  staff: "bg-slate-100 text-slate-600",
+  client: "bg-warning-bg text-warning border border-warning-border",
+};
+
+export function UserList({ users, currentUserId, buildings, assignments }: UserListProps) {
+  const router = useRouter();
+  const [assignDialogUser, setAssignDialogUser] = useState<UserProfile | null>(null);
+  const [selectedBuildingIds, setSelectedBuildingIds] = useState<Set<string>>(new Set());
+  const [saving, setSaving] = useState(false);
+
+  // Build a map: userId -> buildingId[]
+  const userAssignments: Record<string, string[]> = {};
+  for (const a of assignments) {
+    if (!userAssignments[a.user_id]) userAssignments[a.user_id] = [];
+    userAssignments[a.user_id].push(a.building_id);
+  }
+
+  function openAssignDialog(user: UserProfile) {
+    setAssignDialogUser(user);
+    setSelectedBuildingIds(new Set(userAssignments[user.id] ?? []));
+  }
+
+  function toggleBuilding(buildingId: string) {
+    setSelectedBuildingIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(buildingId)) {
+        next.delete(buildingId);
+      } else {
+        next.add(buildingId);
+      }
+      return next;
+    });
+  }
+
+  async function saveAssignments() {
+    if (!assignDialogUser) return;
+
+    setSaving(true);
+    const supabase = createBrowserSupabaseClient();
+
+    // Delete existing assignments for this user
+    const { error: deleteError } = await supabase
+      .from("building_assignments")
+      .delete()
+      .eq("user_id", assignDialogUser.id);
+
+    if (deleteError) {
+      toast.error("Failed to update assignments");
+      setSaving(false);
+      return;
+    }
+
+    // Insert new assignments
+    if (selectedBuildingIds.size > 0) {
+      const rows = Array.from(selectedBuildingIds).map((buildingId) => ({
+        user_id: assignDialogUser.id,
+        building_id: buildingId,
+      }));
+
+      const { error: insertError } = await supabase
+        .from("building_assignments")
+        .insert(rows);
+
+      if (insertError) {
+        toast.error("Failed to save assignments");
+        setSaving(false);
+        return;
+      }
+    }
+
+    toast.success("Building assignments updated");
+    setSaving(false);
+    setAssignDialogUser(null);
+    router.refresh();
+  }
+
+  async function updateRole(userId: string, role: UserRole) {
+    const supabase = createBrowserSupabaseClient();
+    const { error } = await supabase
+      .from("users")
+      .update({ role })
+      .eq("id", userId);
+
+    if (error) {
+      toast.error("Failed to update role");
+      return;
+    }
+
+    toast.success("Role updated");
+    router.refresh();
+  }
+
+  async function toggleActive(userId: string, currentlyActive: boolean) {
+    const supabase = createBrowserSupabaseClient();
+    const { error } = await supabase
+      .from("users")
+      .update({ active: !currentlyActive })
+      .eq("id", userId);
+
+    if (error) {
+      toast.error("Failed to update user status");
+      return;
+    }
+
+    toast.success(currentlyActive ? "User deactivated" : "User activated");
+    router.refresh();
+  }
+
+  return (
+    <div className="space-y-2">
+      {users.map((u) => {
+        const assignedCount = userAssignments[u.id]?.length ?? 0;
+
+        return (
+          <div
+            key={u.id}
+            className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100">
+                <User className="h-4 w-4 text-slate-500" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-body font-medium text-slate-900">
+                    {u.name}
+                  </p>
+                  {!u.active && (
+                    <Badge variant="outline" className="text-[10px] text-slate-400">
+                      Inactive
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-caption text-slate-500">{u.email}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Building count badge for supervisor/staff */}
+              {(u.role === "supervisor" || u.role === "staff") && assignedCount > 0 && (
+                <span className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                  <Building2 className="h-2.5 w-2.5" />
+                  {assignedCount}
+                </span>
+              )}
+
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${roleBadgeColors[u.role] || ""}`}
+              >
+                {u.role}
+              </span>
+
+              {u.id !== currentUserId && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreVertical className="h-4 w-4 text-slate-400" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {(u.role === "supervisor" || u.role === "staff") && (
+                      <DropdownMenuItem onClick={() => openAssignDialog(u)}>
+                        <Building2 className="mr-2 h-4 w-4" />
+                        Assign Buildings
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem
+                      onClick={() =>
+                        updateRole(
+                          u.id,
+                          u.role === "admin" ? "supervisor" : "admin"
+                        )
+                      }
+                    >
+                      <Shield className="mr-2 h-4 w-4" />
+                      {u.role === "admin"
+                        ? "Demote to Supervisor"
+                        : "Promote to Admin"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => toggleActive(u.id, u.active)}
+                    >
+                      {u.active ? (
+                        <>
+                          <Ban className="mr-2 h-4 w-4" />
+                          Deactivate
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          Activate
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Assign Buildings Dialog */}
+      <Dialog
+        open={!!assignDialogUser}
+        onOpenChange={(open) => {
+          if (!open) setAssignDialogUser(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Assign Buildings to {assignDialogUser?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-72 space-y-2 overflow-y-auto py-2">
+            {buildings.length === 0 ? (
+              <p className="text-sm-body text-slate-500">No buildings available</p>
+            ) : (
+              buildings.map((b) => (
+                <label
+                  key={b.id}
+                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 transition-colors hover:bg-slate-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedBuildingIds.has(b.id)}
+                    onChange={() => toggleBuilding(b.id)}
+                    className="h-4 w-4 rounded border-slate-300 text-primary-600"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-body font-medium text-slate-700">{b.name}</p>
+                    {b.city && (
+                      <p className="text-caption text-slate-400">{b.city}</p>
+                    )}
+                  </div>
+                </label>
+              ))
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setAssignDialogUser(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={saveAssignments}
+              disabled={saving}
+              className="bg-primary-600 font-semibold text-white hover:bg-primary-700"
+            >
+              {saving ? "Saving..." : `Save (${selectedBuildingIds.size} selected)`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
