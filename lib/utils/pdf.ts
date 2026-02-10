@@ -320,6 +320,80 @@ export function InspectionReport({ data }: { data: ReportData }) {
           )
         )
       ),
+      // Detailed Responses (failed items with photos)
+      ...data.inspections
+        .filter((insp) => insp.responses.some((r) => r.result === "fail"))
+        .map((insp, idx) =>
+          React.createElement(
+            View,
+            { key: `detail-${idx}`, wrap: false },
+            React.createElement(
+              Text,
+              {
+                style: {
+                  ...styles.sectionTitle,
+                  fontSize: 12,
+                  ...(idx === 0 ? {} : { marginTop: 8 }),
+                },
+              },
+              `${insp.spaceName} — Failed Items`
+            ),
+            ...insp.responses
+              .filter((r) => r.result === "fail")
+              .map((r, rIdx) =>
+                React.createElement(
+                  View,
+                  {
+                    key: rIdx,
+                    style: {
+                      marginBottom: 8,
+                      padding: 8,
+                      backgroundColor: "#FEF2F2",
+                      borderRadius: 4,
+                    },
+                  },
+                  React.createElement(
+                    Text,
+                    { style: { fontSize: 10, fontFamily: "Helvetica-Bold" } },
+                    r.itemDescription
+                  ),
+                  r.comment
+                    ? React.createElement(
+                        Text,
+                        {
+                          style: {
+                            fontSize: 9,
+                            color: "#64748B",
+                            marginTop: 2,
+                          },
+                        },
+                        r.comment
+                      )
+                    : null,
+                  r.photoUrls.length > 0
+                    ? React.createElement(
+                        View,
+                        {
+                          style: {
+                            flexDirection: "row",
+                            flexWrap: "wrap",
+                            marginTop: 4,
+                            gap: 4,
+                          },
+                        },
+                        ...r.photoUrls.map((url, pIdx) =>
+                          React.createElement(Image, {
+                            key: pIdx,
+                            src: url,
+                            style: styles.photo,
+                          })
+                        )
+                      )
+                    : null
+                )
+              )
+          )
+        ),
       // Deficiencies
       data.deficiencies.length > 0 &&
         React.createElement(

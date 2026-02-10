@@ -18,6 +18,7 @@ import { FloorPlanUpload } from "@/components/map/floor-plan-upload";
 import { FloorSelector } from "@/components/map/floor-selector";
 import { StatusSummaryBar } from "@/components/map/status-summary-bar";
 import { SpaceListFallback } from "@/components/map/space-list-fallback";
+import { RealtimeRefresh } from "@/components/map/realtime-refresh";
 
 export default async function FloorMapPage({
   params,
@@ -131,6 +132,7 @@ export default async function FloorMapPage({
 
   return (
     <div className="flex h-[calc(100vh-64px)] flex-col">
+      <RealtimeRefresh buildingId={buildingId} spaceIds={spaceIds} />
       {/* Header */}
       <div className="border-b border-slate-200 bg-white px-4 py-3">
         <Link

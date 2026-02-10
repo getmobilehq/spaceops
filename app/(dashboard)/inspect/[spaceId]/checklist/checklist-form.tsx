@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { useInspectionStore } from "@/lib/stores/inspection-store";
-import { compressPhoto, generatePhotoPath } from "@/lib/utils/photos";
+import { compressPhoto, generatePhotoPath, getSignedPhotoUrls } from "@/lib/utils/photos";
 import { toast } from "sonner";
 import Link from "next/link";
 import type {
@@ -58,6 +58,7 @@ export function ChecklistForm({
   const [submitting, setSubmitting] = useState(false);
   const [uploadingItem, setUploadingItem] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activePhotoItemRef = useRef<string | null>(null);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -114,6 +115,17 @@ export function ChecklistForm({
     }, 1000);
     return () => clearInterval(interval);
   }, [inspection.started_at, editMode]);
+
+  // Resolve signed URLs for uploaded photos
+  useEffect(() => {
+    const allPaths = Object.values(responses).flatMap((r) => r.photoUrls);
+    const newPaths = allPaths.filter((p) => p && !signedUrls[p]);
+    if (newPaths.length === 0) return;
+
+    getSignedPhotoUrls(newPaths).then((urls) => {
+      setSignedUrls((prev) => ({ ...prev, ...urls }));
+    });
+  }, [responses, signedUrls]);
 
   // Auto-save to Supabase with 3s debounce
   const syncToSupabase = useCallback(async () => {
@@ -197,6 +209,10 @@ export function ChecklistForm({
       }
 
       addPhoto(itemId, path);
+      // Immediately resolve signed URL for the new photo
+      getSignedPhotoUrls([path]).then((urls) => {
+        setSignedUrls((prev) => ({ ...prev, ...urls }));
+      });
       toast.success("Photo uploaded");
     } catch {
       toast.error("Failed to process photo");
@@ -487,17 +503,25 @@ export function ChecklistForm({
 
                         {/* Photos */}
                         <div className="flex flex-wrap gap-2">
-                          {(resp?.photoUrls ?? []).map((url, idx) => (
+                          {(resp?.photoUrls ?? []).map((path, idx) => (
                             <div
                               key={idx}
                               className="relative h-16 w-16 overflow-hidden rounded-md border border-fail-border"
                             >
-                              <div className="flex h-full w-full items-center justify-center bg-slate-100">
-                                <Camera className="h-4 w-4 text-slate-400" />
-                              </div>
+                              {signedUrls[path] ? (
+                                <img
+                                  src={signedUrls[path]}
+                                  alt={`Photo ${idx + 1}`}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center bg-slate-100">
+                                  <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                                </div>
+                              )}
                               <button
                                 type="button"
-                                onClick={() => removePhoto(item.id, url)}
+                                onClick={() => removePhoto(item.id, path)}
                                 className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-fail text-white"
                               >
                                 <X className="h-3 w-3" />

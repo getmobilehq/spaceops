@@ -76,3 +76,60 @@ export function generatePhotoPath(
 ): string {
   return `${orgId}/${buildingId}/inspections/${inspectionId}/${itemId}_${index}.jpg`;
 }
+
+/**
+ * Generate signed URLs for an array of photo storage paths (client-side).
+ * Uses batch createSignedUrls for a single HTTP call. 10-minute expiry.
+ */
+export async function getSignedPhotoUrls(
+  paths: string[]
+): Promise<Record<string, string>> {
+  if (paths.length === 0) return {};
+
+  const { createBrowserSupabaseClient } = await import(
+    "@/lib/supabase/client"
+  );
+  const supabase = createBrowserSupabaseClient();
+  const result: Record<string, string> = {};
+
+  const { data } = await supabase.storage
+    .from("inspection-photos")
+    .createSignedUrls(paths, 600);
+
+  if (!data) return result;
+
+  for (let i = 0; i < data.length; i++) {
+    if (data[i].signedUrl && !data[i].error) {
+      result[paths[i]] = data[i].signedUrl;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Server-side signed URL generation. Pass a Supabase client instance.
+ */
+export async function getSignedPhotoUrlsServer(
+  paths: string[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any
+): Promise<Record<string, string>> {
+  if (paths.length === 0) return {};
+
+  const result: Record<string, string> = {};
+
+  const { data } = await supabase.storage
+    .from("inspection-photos")
+    .createSignedUrls(paths, 600);
+
+  if (!data) return result;
+
+  for (let i = 0; i < data.length; i++) {
+    if (data[i].signedUrl && !data[i].error) {
+      result[paths[i]] = data[i].signedUrl;
+    }
+  }
+
+  return result;
+}

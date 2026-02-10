@@ -118,6 +118,48 @@ export async function POST(req: NextRequest) {
     allResponses = (respData ?? []) as unknown as InspectionResponse[];
   }
 
+  // Fetch response photos for detailed reports
+  const responseIds = allResponses.map((r) => r.id);
+  let photosByResponse: Record<string, string[]> = {};
+  let signedPhotoUrls: Record<string, string> = {};
+
+  if (report_type === "detailed" && responseIds.length > 0) {
+    const { data: photoData } = await supabase
+      .from("response_photos")
+      .select("response_id, photo_url, display_order")
+      .in("response_id", responseIds)
+      .order("display_order");
+
+    const photos = (photoData ?? []) as unknown as {
+      response_id: string;
+      photo_url: string;
+      display_order: number;
+    }[];
+
+    for (const photo of photos) {
+      if (!photosByResponse[photo.response_id]) {
+        photosByResponse[photo.response_id] = [];
+      }
+      photosByResponse[photo.response_id].push(photo.photo_url);
+    }
+
+    // Generate signed URLs for all photo paths
+    const allPhotoPaths = photos.map((p) => p.photo_url);
+    if (allPhotoPaths.length > 0) {
+      const { data: signedData } = await supabase.storage
+        .from("inspection-photos")
+        .createSignedUrls(allPhotoPaths, 600);
+
+      if (signedData) {
+        for (let i = 0; i < signedData.length; i++) {
+          if (signedData[i].signedUrl && !signedData[i].error) {
+            signedPhotoUrls[allPhotoPaths[i]] = signedData[i].signedUrl;
+          }
+        }
+      }
+    }
+  }
+
   // Fetch checklist item descriptions
   const itemIds = [...new Set(allResponses.map((r) => r.checklist_item_id))];
   let itemMap: Record<string, string> = {};
@@ -181,7 +223,9 @@ export async function POST(req: NextRequest) {
             itemDescription: itemMap[r.checklist_item_id] ?? "Unknown item",
             result: r.result as "pass" | "fail",
             comment: r.comment,
-            photoUrls: [],
+            photoUrls: (photosByResponse[r.id] ?? [])
+              .map((p) => signedPhotoUrls[p])
+              .filter(Boolean),
           }))
         : [],
     };
