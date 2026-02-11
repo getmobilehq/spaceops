@@ -1,0 +1,41 @@
+name: Scheduled Cron Jobs
+
+on:
+  schedule:
+    # SLA warning — every 30 minutes
+    - cron: "*/30 * * * *"
+    # Overdue check — every hour
+    - cron: "0 * * * *"
+    # Cleanup expired — daily at 2 AM UTC
+    - cron: "0 2 * * *"
+
+jobs:
+  sla-warning:
+    if: github.event.schedule == '*/30 * * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger SLA warning check
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/sla-warning"
+
+  overdue-check:
+    if: github.event.schedule == '0 * * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger overdue task check
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/overdue-check"
+
+  cleanup-expired:
+    if: github.event.schedule == '0 2 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger cleanup of expired data
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/cleanup-expired"
