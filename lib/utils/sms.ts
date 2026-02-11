@@ -29,3 +29,24 @@ export async function sendSms(params: {
     return { success: false, error: String(err) };
   }
 }
+
+export async function sendWhatsApp(params: {
+  to: string;
+  message: string;
+}): Promise<{ success: boolean; sid?: string; error?: string }> {
+  try {
+    const client = getTwilioClient();
+    const fromNumber = process.env.TWILIO_WHATSAPP_FROM_NUMBER;
+    if (!fromNumber) throw new Error("TWILIO_WHATSAPP_FROM_NUMBER not configured");
+
+    const result = await client.messages.create({
+      body: params.message,
+      from: fromNumber.startsWith("whatsapp:") ? fromNumber : `whatsapp:${fromNumber}`,
+      to: params.to.startsWith("whatsapp:") ? params.to : `whatsapp:${params.to}`,
+    });
+    return { success: true, sid: result.sid };
+  } catch (err) {
+    console.error("WhatsApp send error:", err);
+    return { success: false, error: String(err) };
+  }
+}

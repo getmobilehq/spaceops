@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendSms } from "@/lib/utils/sms";
+import { sendSms, sendWhatsApp } from "@/lib/utils/sms";
 import { createNotification } from "@/lib/utils/notifications";
 import type { Task, UserProfile } from "@/lib/types/helpers";
 
@@ -101,9 +101,13 @@ export async function GET(req: NextRequest) {
           if (assignee) {
             const prefs = (assignee.notification_prefs ?? {}) as {
               sms?: boolean;
+              whatsapp?: boolean;
             };
             if (prefs.sms !== false && assignee.phone) {
               await sendSms({ to: assignee.phone, message });
+            }
+            if (prefs.whatsapp === true && assignee.phone) {
+              await sendWhatsApp({ to: assignee.phone, message });
             }
           }
         }

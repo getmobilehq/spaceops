@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendSms } from "@/lib/utils/sms";
+import { sendSms, sendWhatsApp } from "@/lib/utils/sms";
 import type { Task, UserProfile } from "@/lib/types/helpers";
 
 export async function POST(req: NextRequest) {
@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
     const prefs = (assignee.notification_prefs ?? {}) as {
       sms?: boolean;
       in_app?: boolean;
+      whatsapp?: boolean;
     };
 
     // Create in-app notification
@@ -86,7 +87,14 @@ export async function POST(req: NextRequest) {
       smsSent = result.success;
     }
 
-    return NextResponse.json({ success: true, smsSent });
+    // Send WhatsApp if enabled and phone exists
+    let whatsappSent = false;
+    if (prefs.whatsapp === true && assignee.phone) {
+      const result = await sendWhatsApp({ to: assignee.phone, message });
+      whatsappSent = result.success;
+    }
+
+    return NextResponse.json({ success: true, smsSent, whatsappSent });
   } catch (err) {
     console.error("Send SMS error:", err);
     return NextResponse.json(

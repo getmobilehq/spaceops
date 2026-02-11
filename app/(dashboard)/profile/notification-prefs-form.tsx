@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, MessageSquare, Mail, Loader2 } from "lucide-react";
+import { Bell, MessageSquare, Mail, Loader2, Phone } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
@@ -12,6 +12,7 @@ interface NotificationPrefsFormProps {
     sms?: boolean;
     in_app?: boolean;
     email?: boolean;
+    whatsapp?: boolean;
   };
 }
 
@@ -20,15 +21,17 @@ export function NotificationPrefsForm({ userId, prefs }: NotificationPrefsFormPr
   const [sms, setSms] = useState(prefs.sms !== false);
   const [inApp, setInApp] = useState(prefs.in_app !== false);
   const [email, setEmail] = useState(prefs.email !== false);
+  const [whatsapp, setWhatsapp] = useState(prefs.whatsapp === true);
   const [saving, setSaving] = useState(false);
 
   async function handleToggle(
-    key: "sms" | "in_app" | "email",
+    key: "sms" | "in_app" | "email" | "whatsapp",
     value: boolean
   ) {
     if (key === "sms") setSms(value);
     if (key === "in_app") setInApp(value);
     if (key === "email") setEmail(value);
+    if (key === "whatsapp") setWhatsapp(value);
 
     setSaving(true);
     const supabase = createBrowserSupabaseClient();
@@ -37,6 +40,7 @@ export function NotificationPrefsForm({ userId, prefs }: NotificationPrefsFormPr
       sms: key === "sms" ? value : sms,
       in_app: key === "in_app" ? value : inApp,
       email: key === "email" ? value : email,
+      whatsapp: key === "whatsapp" ? value : whatsapp,
     };
 
     const { error } = await supabase
@@ -52,6 +56,7 @@ export function NotificationPrefsForm({ userId, prefs }: NotificationPrefsFormPr
       if (key === "sms") setSms(!value);
       if (key === "in_app") setInApp(!value);
       if (key === "email") setEmail(!value);
+      if (key === "whatsapp") setWhatsapp(!value);
       return;
     }
 
@@ -89,6 +94,13 @@ export function NotificationPrefsForm({ userId, prefs }: NotificationPrefsFormPr
           description="Receive reports and summaries by email"
           checked={email}
           onChange={(val) => handleToggle("email", val)}
+        />
+        <ToggleRow
+          icon={Phone}
+          label="WhatsApp Notifications"
+          description="Receive task assignments and SLA warnings via WhatsApp"
+          checked={whatsapp}
+          onChange={(val) => handleToggle("whatsapp", val)}
         />
       </div>
     </div>
