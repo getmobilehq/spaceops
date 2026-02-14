@@ -85,38 +85,31 @@ export function SignupForm({ token }: SignupFormProps) {
     setLoading(true);
 
     try {
-      const supabase = createBrowserSupabaseClient();
+      // Use server-side API route (service role) to create account + profile
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, name, password }),
+      });
 
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const result = await res.json();
+
+      if (!res.ok) {
+        setError(result.error || "Failed to create account");
+        return;
+      }
+
+      // Sign in with the newly created credentials
+      const supabase = createBrowserSupabaseClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: invitation.email,
         password,
       });
 
-      if (authError || !authData.user) {
-        setError(authError?.message || "Failed to create account");
+      if (signInError) {
+        setError("Account created but sign-in failed. Please go to the login page.");
         return;
       }
-
-      // Create user profile
-      const { error: profileError } = await supabase.from("users").insert({
-        id: authData.user.id,
-        org_id: invitation.org_id,
-        email: invitation.email,
-        name,
-        role: invitation.role as "admin" | "supervisor" | "client" | "staff",
-      });
-
-      if (profileError) {
-        setError("Failed to create profile. Please contact your admin.");
-        return;
-      }
-
-      // Mark invitation as accepted
-      await supabase
-        .from("invitations")
-        .update({ accepted: true })
-        .eq("id", invitation.id);
 
       router.push("/");
       router.refresh();
