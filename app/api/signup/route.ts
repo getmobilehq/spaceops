@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { setAuditContextAdmin } from "@/lib/utils/audit";
 import { z } from "zod";
 
 const signupSchema = z.object({
@@ -54,7 +55,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Create auth user (service role bypasses email confirmation)
+    // 3. Set audit context for the admin client
+    await setAuditContextAdmin(supabase, null, inv.org_id);
+
+    // 4. Create auth user (service role bypasses email confirmation)
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: inv.email,
       password,

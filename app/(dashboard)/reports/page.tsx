@@ -55,7 +55,7 @@ export default async function ReportsPage() {
   }
 
   return (
-    <div className="p-4">
+    <div className="p-4 lg:mx-auto lg:max-w-7xl lg:px-6 lg:py-6">
       <h1 className="mb-4 text-h1 text-slate-900">Reports</h1>
       <p className="mb-6 text-sm-body text-slate-500">
         Generate inspection reports for your buildings

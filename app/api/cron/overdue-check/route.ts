@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { setAuditContextAdmin } from "@/lib/utils/audit";
 import { sendSms, sendWhatsApp } from "@/lib/utils/sms";
 import { createNotification } from "@/lib/utils/notifications";
 import type { Task, UserProfile } from "@/lib/types/helpers";
@@ -13,6 +14,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const supabase = createAdminClient();
+    await setAuditContextAdmin(supabase, null);
     const now = new Date();
 
     // Find overdue tasks

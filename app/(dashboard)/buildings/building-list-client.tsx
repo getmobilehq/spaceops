@@ -64,7 +64,7 @@ export function BuildingListClient({
 
   return (
     <div>
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
         {buildings.map((building) => (
           <Link key={building.id} href={`/buildings/${building.id}`}>
             <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:bg-slate-50">

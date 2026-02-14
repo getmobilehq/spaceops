@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { setAuditContextAdmin } from "@/lib/utils/audit";
 import { sendSms, sendWhatsApp } from "@/lib/utils/sms";
 import type { Task, UserProfile } from "@/lib/types/helpers";
 
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest) {
 
     // Use admin client for cross-user operations
     const supabase = createAdminClient();
+    await setAuditContextAdmin(supabase, user.id);
 
     // Fetch task
     const { data: taskData } = await supabase

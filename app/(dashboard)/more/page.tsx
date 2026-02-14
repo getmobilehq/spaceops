@@ -9,6 +9,7 @@ import {
   Bell,
   User,
   LogOut,
+  ScrollText,
 } from "lucide-react";
 import type { UserProfile } from "@/lib/types/helpers";
 import { MoreMenuItem, MoreMenuSection } from "@/components/layout/more-menu-item";
@@ -66,7 +67,7 @@ export default async function MorePage() {
   const notifCount = notifCountRes.count ?? 0;
 
   return (
-    <div className="p-4 pb-8">
+    <div className="p-4 pb-8 lg:mx-auto lg:max-w-7xl lg:px-6 lg:py-6">
       {/* User info summary */}
       <div className="mb-6 flex items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-primary-700">
@@ -99,6 +100,11 @@ export default async function MorePage() {
             icon={Settings}
             label="Organization Settings"
             href="/admin/settings"
+          />
+          <MoreMenuItem
+            icon={ScrollText}
+            label="Audit Log"
+            href="/admin/audit-log"
           />
         </MoreMenuSection>
       )}

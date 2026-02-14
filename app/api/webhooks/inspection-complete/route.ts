@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { setAuditContextAdmin } from "@/lib/utils/audit";
 import { renderToBuffer } from "@react-pdf/renderer";
 import {
   InspectionReport,
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = createAdminClient();
+    await setAuditContextAdmin(supabase, null);
 
     // Get building
     const { data: buildingData } = await supabase

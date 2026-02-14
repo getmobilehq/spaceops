@@ -23,6 +23,7 @@ export type NotificationType =
   | "invitation";
 export type ReportTriggerType = "scheduled" | "on_completion";
 export type ReportType = "summary" | "detailed";
+export type AuditAction = "INSERT" | "UPDATE" | "DELETE";
 
 export interface Database {
   public: {
@@ -672,6 +673,44 @@ export interface Database {
         };
         Relationships: [];
       };
+      audit_logs: {
+        Row: {
+          id: string;
+          org_id: string | null;
+          table_name: string;
+          record_id: string;
+          action: AuditAction;
+          user_id: string | null;
+          old_values: Json | null;
+          new_values: Json | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id?: string | null;
+          table_name: string;
+          record_id: string;
+          action: AuditAction;
+          user_id?: string | null;
+          old_values?: Json | null;
+          new_values?: Json | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          org_id?: string | null;
+          table_name?: string;
+          record_id?: string;
+          action?: AuditAction;
+          user_id?: string | null;
+          old_values?: Json | null;
+          new_values?: Json | null;
+          metadata?: Json;
+        };
+        Relationships: [];
+      };
       shared_dashboards: {
         Row: {
           id: string;
@@ -712,6 +751,7 @@ export interface Database {
       notification_type: NotificationType;
       report_trigger_type: ReportTriggerType;
       report_type: ReportType;
+      audit_action: AuditAction;
     };
   };
 }

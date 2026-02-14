@@ -9,6 +9,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
 const SECTION_TITLES: [string, string][] = [
+  ["/admin/audit-log", "Audit Log"],
   ["/admin/users", "User Management"],
   ["/admin/checklists/", "Edit Checklist"],
   ["/admin/checklists", "Checklists"],
@@ -51,13 +52,13 @@ export function Header({ title }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
-      <div className="flex h-14 items-center justify-between px-4">
+      <div className="flex h-14 items-center justify-between px-4 lg:px-6">
         <div className="flex items-center gap-3">
           {showBackNav ? (
             <>
               <Link
                 href="/more"
-                className="-ml-1 flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100"
+                className="-ml-1 flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 lg:hidden"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Link>
@@ -66,7 +67,9 @@ export function Header({ title }: HeaderProps) {
           ) : title ? (
             <h1 className="text-h3 text-slate-900">{title}</h1>
           ) : (
-            <Logo size="sm" />
+            <div className="lg:hidden">
+              <Logo size="sm" />
+            </div>
           )}
         </div>
         <Link href="/notifications">

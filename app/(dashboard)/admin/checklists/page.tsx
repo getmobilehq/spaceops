@@ -73,7 +73,7 @@ export default async function AdminChecklistsPage() {
   }
 
   return (
-    <div className="p-4">
+    <div className="p-4 lg:mx-auto lg:max-w-7xl lg:px-6 lg:py-6">
       <div className="mb-6">
         <h1 className="text-h1 text-slate-900">Checklists</h1>
         <p className="mt-1 text-sm-body text-slate-500">

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { setAuditContextAdmin } from "@/lib/utils/audit";
 
 export async function GET(req: NextRequest) {
   // Validate cron secret
@@ -10,6 +11,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const supabase = createAdminClient();
+    await setAuditContextAdmin(supabase, null);
 
     // 1. Hard-delete spaces where deleted_at > 30 days ago
     const thirtyDaysAgo = new Date();

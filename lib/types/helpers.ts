@@ -31,3 +31,4 @@ export type FloorPlan = Tables<"floor_plans">;
 export type ClientBuildingLink = Tables<"client_building_links">;
 export type ReportConfig = Tables<"report_configs">;
 export type SharedDashboard = Tables<"shared_dashboards">;
+export type AuditLog = Tables<"audit_logs">;

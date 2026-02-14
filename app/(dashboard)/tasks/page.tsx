@@ -202,7 +202,7 @@ export default async function TasksPage() {
   });
 
   return (
-    <div className="p-4">
+    <div className="p-4 lg:mx-auto lg:max-w-7xl lg:px-6 lg:py-6">
       <TaskList
         tasks={enriched}
         buildings={allBuildings}

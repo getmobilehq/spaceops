@@ -29,7 +29,7 @@ export default async function ProfilePage() {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 lg:mx-auto lg:max-w-xl lg:px-6 lg:py-6">
       <h1 className="text-h1 mb-6 text-slate-900">Profile</h1>
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm">

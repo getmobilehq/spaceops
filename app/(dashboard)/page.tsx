@@ -105,7 +105,7 @@ export default async function HomePage() {
   ]);
 
   return (
-    <div className="p-4">
+    <div className="p-4 lg:mx-auto lg:max-w-7xl lg:px-6 lg:py-6">
       <div className="mb-6">
         <h1 className="text-h1 text-slate-900">
           Welcome, {profile.name.split(" ")[0]}
@@ -116,7 +116,7 @@ export default async function HomePage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
         <KpiCard
           label="Buildings"
           value={buildings.length}
@@ -218,7 +218,7 @@ export default async function HomePage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {buildingStats.map((stats) => (
               <BuildingCard
                 key={stats.buildingId}

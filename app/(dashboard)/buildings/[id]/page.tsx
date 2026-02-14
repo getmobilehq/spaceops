@@ -93,7 +93,7 @@ export default async function BuildingDetailPage({
     ]);
 
   return (
-    <div className="p-4">
+    <div className="p-4 lg:mx-auto lg:max-w-7xl lg:px-6 lg:py-6">
       <Link
         href="/buildings"
         className="mb-4 inline-flex items-center gap-1 text-sm-body text-slate-500 hover:text-slate-700"
@@ -135,7 +135,7 @@ export default async function BuildingDetailPage({
         {/* KPI Cards */}
         {stats && (
           <section>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
               <KpiCard
                 label="Today's Pass Rate"
                 value={stats.passRate !== null ? `${stats.passRate}%` : "--"}

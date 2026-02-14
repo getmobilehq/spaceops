@@ -98,7 +98,7 @@ export default async function AdminSettingsPage() {
   }
 
   return (
-    <div className="p-4">
+    <div className="p-4 lg:mx-auto lg:max-w-7xl lg:px-6 lg:py-6">
       <h1 className="text-h1 mb-6 text-slate-900">Organization Settings</h1>
       <div className="space-y-8">
         <OrgSettingsForm org={org} />

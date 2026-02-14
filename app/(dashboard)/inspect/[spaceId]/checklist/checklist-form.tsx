@@ -389,7 +389,7 @@ export function ChecklistForm({
   const progress = items.length > 0 ? (answeredCount / items.length) * 100 : 0;
 
   return (
-    <div className="pb-28">
+    <div className="pb-28 lg:mx-auto lg:max-w-2xl">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
