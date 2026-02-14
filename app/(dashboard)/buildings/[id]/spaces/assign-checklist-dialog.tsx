@@ -113,6 +113,25 @@ export function AssignChecklistDialog({
         </DialogHeader>
 
         <form onSubmit={handleAssign} className="space-y-4">
+          {templates.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+              <ClipboardList className="h-8 w-8 text-slate-400" />
+              <div>
+                <p className="text-body font-semibold text-slate-700">
+                  No checklist templates found
+                </p>
+                <p className="mt-1 text-caption text-slate-500">
+                  Create a checklist template first, then assign it to spaces.
+                </p>
+              </div>
+              <a
+                href="/admin/checklists"
+                className="text-caption font-semibold text-primary-600 hover:text-primary-700"
+              >
+                Create Template &rarr;
+              </a>
+            </div>
+          ) : (
           <div className="space-y-2">
             <Label className="text-sm-body font-semibold text-slate-700">
               Checklist Template
@@ -130,6 +149,7 @@ export function AssignChecklistDialog({
               </SelectContent>
             </Select>
           </div>
+          )}
 
           <div className="space-y-2">
             <Label className="text-sm-body font-semibold text-slate-700">

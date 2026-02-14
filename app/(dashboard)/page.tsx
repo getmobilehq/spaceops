@@ -7,6 +7,7 @@ import {
   Users,
   Clock,
   ChevronRight,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import type { UserProfile, Building } from "@/lib/types/helpers";
@@ -25,6 +26,7 @@ import {
 } from "@/lib/utils/dashboard-queries";
 import { RepeatFailuresWidget } from "@/components/dashboard/repeat-failures-widget";
 import { TrendChart } from "@/components/dashboard/trend-chart";
+import { QuickActionCard } from "@/components/dashboard/quick-action-card";
 import { formatRelativeTime } from "@/lib/utils/format";
 
 export default async function HomePage() {
@@ -71,6 +73,8 @@ export default async function HomePage() {
     trendData7,
     trendData30,
     trendData90,
+    adminUserCount,
+    adminTemplateCount,
   ] = await Promise.all([
     getTodayInspectionCount(supabase),
     getOpenDeficiencyCount(supabase),
@@ -83,6 +87,21 @@ export default async function HomePage() {
     getCompletionTrendData(supabase, undefined, 7),
     getCompletionTrendData(supabase, undefined, 30),
     getCompletionTrendData(supabase, undefined, 90),
+    profile.role === "admin"
+      ? supabase
+          .from("users")
+          .select("*", { count: "exact", head: true })
+          .eq("org_id", profile.org_id)
+          .then((r) => r.count ?? 0)
+      : Promise.resolve(0),
+    profile.role === "admin"
+      ? supabase
+          .from("checklist_templates")
+          .select("*", { count: "exact", head: true })
+          .eq("org_id", profile.org_id)
+          .eq("archived", false)
+          .then((r) => r.count ?? 0)
+      : Promise.resolve(0),
   ]);
 
   return (
@@ -119,6 +138,32 @@ export default async function HomePage() {
           icon={Users}
         />
       </div>
+
+      {/* Admin Quick Actions */}
+      {profile.role === "admin" && (
+        <div className="mt-6">
+          <h2 className="mb-3 text-h3 text-slate-900">Admin Quick Actions</h2>
+          <div className="grid grid-cols-3 gap-3">
+            <QuickActionCard
+              icon={Users}
+              label="Users"
+              description={`${adminUserCount} member${adminUserCount !== 1 ? "s" : ""}`}
+              href="/admin/users"
+            />
+            <QuickActionCard
+              icon={ClipboardList}
+              label="Checklists"
+              description={`${adminTemplateCount} template${adminTemplateCount !== 1 ? "s" : ""}`}
+              href="/admin/checklists"
+            />
+            <QuickActionCard
+              icon={Settings}
+              label="Settings"
+              href="/admin/settings"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Overdue Tasks Alert */}
       {overdueTasks.length > 0 && (

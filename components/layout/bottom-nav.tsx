@@ -11,6 +11,7 @@ import {
   BarChart3,
   FileText,
   AlertCircle,
+  Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/types/database";
@@ -31,7 +32,7 @@ function getNavItems(role: UserRole): NavItem[] {
         { label: "Buildings", href: "/buildings", icon: Building2 },
         { label: "Scan", href: "/scan", icon: ScanLine, isScan: true },
         { label: "Tasks", href: "/tasks", icon: ClipboardList },
-        { label: "Profile", href: "/profile", icon: User },
+        { label: "More", href: "/more", icon: Menu },
       ];
     case "client":
       return [
@@ -64,7 +65,11 @@ export function BottomNav({ role }: BottomNavProps) {
           const isActive =
             item.href === "/"
               ? pathname === "/"
-              : pathname.startsWith(item.href);
+              : item.href === "/more"
+                ? ["/more", "/profile", "/admin", "/deficiencies", "/reports", "/notifications"].some(
+                    (p) => pathname.startsWith(p)
+                  )
+                : pathname.startsWith(item.href);
 
           if (item.isScan) {
             return (

@@ -24,29 +24,40 @@ export default async function AdminChecklistsPage() {
   const profile = profileData as unknown as UserProfile | null;
   if (!profile || profile.role !== "admin") redirect("/");
 
-  // Get org-specific templates
-  const { data: orgTemplatesData } = await supabase
-    .from("checklist_templates")
-    .select("*")
-    .eq("org_id", profile.org_id)
-    .eq("archived", false)
-    .order("name");
+  // Get org-specific templates (active + archived in parallel)
+  const [
+    { data: orgTemplatesData },
+    { data: archivedTemplatesData },
+    { data: cannedTemplatesData },
+  ] = await Promise.all([
+    supabase
+      .from("checklist_templates")
+      .select("*")
+      .eq("org_id", profile.org_id)
+      .eq("archived", false)
+      .order("name"),
+    supabase
+      .from("checklist_templates")
+      .select("*")
+      .eq("org_id", profile.org_id)
+      .eq("archived", true)
+      .order("name"),
+    supabase
+      .from("checklist_templates")
+      .select("*")
+      .is("org_id", null)
+      .eq("is_canned", true)
+      .order("name"),
+  ]);
 
   const orgTemplates = (orgTemplatesData ?? []) as unknown as ChecklistTemplate[];
-
-  // Get canned (system) templates
-  const { data: cannedTemplatesData } = await supabase
-    .from("checklist_templates")
-    .select("*")
-    .is("org_id", null)
-    .eq("is_canned", true)
-    .order("name");
-
+  const archivedTemplates = (archivedTemplatesData ?? []) as unknown as ChecklistTemplate[];
   const cannedTemplates = (cannedTemplatesData ?? []) as unknown as ChecklistTemplate[];
 
-  // Get all items for all templates (org + canned)
+  // Get all items for all templates (org + archived + canned)
   const allTemplateIds = [
     ...orgTemplates.map((t) => t.id),
+    ...archivedTemplates.map((t) => t.id),
     ...cannedTemplates.map((t) => t.id),
   ];
 
@@ -73,6 +84,7 @@ export default async function AdminChecklistsPage() {
       <ChecklistManager
         orgId={profile.org_id}
         orgTemplates={orgTemplates}
+        archivedTemplates={archivedTemplates}
         cannedTemplates={cannedTemplates}
         items={items}
       />

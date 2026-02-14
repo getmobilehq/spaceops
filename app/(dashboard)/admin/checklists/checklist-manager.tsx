@@ -13,12 +13,23 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Plus,
   Loader2,
   ClipboardList,
   ChevronRight,
   Copy,
   Library,
+  MoreVertical,
+  Pencil,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { createChecklistTemplateSchema } from "@/lib/validators/schemas";
@@ -29,6 +40,7 @@ import Link from "next/link";
 interface ChecklistManagerProps {
   orgId: string;
   orgTemplates: ChecklistTemplate[];
+  archivedTemplates: ChecklistTemplate[];
   cannedTemplates: ChecklistTemplate[];
   items: ChecklistItem[];
 }
@@ -36,13 +48,18 @@ interface ChecklistManagerProps {
 export function ChecklistManager({
   orgId,
   orgTemplates,
+  archivedTemplates,
   cannedTemplates,
   items,
 }: ChecklistManagerProps) {
   const router = useRouter();
   const [createOpen, setCreateOpen] = useState(false);
   const [cloneOpen, setCloneOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<ChecklistTemplate | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const [name, setName] = useState("");
+  const [renameName, setRenameName] = useState("");
   const [loading, setLoading] = useState(false);
 
   const itemsByTemplate = items.reduce<Record<string, ChecklistItem[]>>(
@@ -133,6 +150,78 @@ export function ChecklistManager({
     toast.success("Template cloned successfully");
     setCloneOpen(false);
     router.refresh();
+  }
+
+  async function handleRename(e: React.FormEvent) {
+    e.preventDefault();
+    if (!renameTarget) return;
+
+    const parsed = createChecklistTemplateSchema.safeParse({ name: renameName });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
+      return;
+    }
+
+    setLoading(true);
+    const supabase = createBrowserSupabaseClient();
+
+    const { error } = await supabase
+      .from("checklist_templates")
+      .update({ name: renameName })
+      .eq("id", renameTarget.id);
+
+    setLoading(false);
+
+    if (error) {
+      toast.error("Failed to rename template");
+      return;
+    }
+
+    toast.success("Template renamed");
+    setRenameOpen(false);
+    setRenameTarget(null);
+    setRenameName("");
+    router.refresh();
+  }
+
+  async function handleArchive(template: ChecklistTemplate) {
+    const supabase = createBrowserSupabaseClient();
+
+    const { error } = await supabase
+      .from("checklist_templates")
+      .update({ archived: true })
+      .eq("id", template.id);
+
+    if (error) {
+      toast.error("Failed to archive template");
+      return;
+    }
+
+    toast.success(`"${template.name}" archived`);
+    router.refresh();
+  }
+
+  async function handleRestore(template: ChecklistTemplate) {
+    const supabase = createBrowserSupabaseClient();
+
+    const { error } = await supabase
+      .from("checklist_templates")
+      .update({ archived: false })
+      .eq("id", template.id);
+
+    if (error) {
+      toast.error("Failed to restore template");
+      return;
+    }
+
+    toast.success(`"${template.name}" restored`);
+    router.refresh();
+  }
+
+  function openRename(template: ChecklistTemplate) {
+    setRenameTarget(template);
+    setRenameName(template.name);
+    setRenameOpen(true);
   }
 
   return (
@@ -262,15 +351,17 @@ export function ChecklistManager({
         ) : (
           <div className="space-y-2">
             {orgTemplates.map((template) => (
-              <Link
+              <div
                 key={template.id}
-                href={`/admin/checklists/${template.id}`}
-                className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm transition-colors hover:bg-slate-50"
+                className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm"
               >
-                <div className="flex items-center gap-3">
-                  <ClipboardList className="h-5 w-5 text-primary-500" />
-                  <div>
-                    <p className="text-body font-medium text-slate-900">
+                <Link
+                  href={`/admin/checklists/${template.id}`}
+                  className="flex min-w-0 flex-1 items-center gap-3 transition-colors hover:opacity-80"
+                >
+                  <ClipboardList className="h-5 w-5 shrink-0 text-primary-500" />
+                  <div className="min-w-0">
+                    <p className="truncate text-body font-medium text-slate-900">
                       {template.name}
                     </p>
                     <p className="text-caption text-slate-500">
@@ -278,13 +369,96 @@ export function ChecklistManager({
                       {template.version}
                     </p>
                   </div>
+                </Link>
+                <div className="flex shrink-0 items-center gap-1">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreVertical className="h-4 w-4 text-slate-400" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => openRename(template)}
+                      >
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Rename
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleClone(template)}
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        Duplicate
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => handleArchive(template)}
+                        className="text-fail focus:text-fail"
+                      >
+                        <Archive className="mr-2 h-4 w-4" />
+                        Archive
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Link href={`/admin/checklists/${template.id}`}>
+                    <ChevronRight className="h-4 w-4 text-slate-400" />
+                  </Link>
                 </div>
-                <ChevronRight className="h-4 w-4 text-slate-400" />
-              </Link>
+              </div>
             ))}
           </div>
         )}
       </section>
+
+      {/* Archived templates */}
+      {archivedTemplates.length > 0 && (
+        <section>
+          <button
+            onClick={() => setShowArchived(!showArchived)}
+            className="text-caption font-semibold text-slate-500 hover:text-slate-700"
+          >
+            {showArchived ? "Hide" : "Show"} {archivedTemplates.length} archived
+            template{archivedTemplates.length !== 1 ? "s" : ""}
+          </button>
+
+          {showArchived && (
+            <div className="mt-2 space-y-2">
+              {archivedTemplates.map((template) => (
+                <div
+                  key={template.id}
+                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <ClipboardList className="h-5 w-5 text-slate-400" />
+                    <div>
+                      <p className="text-body font-medium text-slate-500 line-through">
+                        {template.name}
+                      </p>
+                      <p className="text-caption text-slate-400">
+                        {(itemsByTemplate[template.id] || []).length} items · v
+                        {template.version} · Archived
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleRestore(template)}
+                  >
+                    <ArchiveRestore className="mr-1.5 h-3.5 w-3.5" />
+                    Restore
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* System templates (read-only) */}
       {cannedTemplates.length > 0 && (
@@ -324,6 +498,61 @@ export function ChecklistManager({
           </div>
         </section>
       )}
+
+      {/* Rename dialog */}
+      <Dialog
+        open={renameOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRenameOpen(false);
+            setRenameTarget(null);
+            setRenameName("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rename Template</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleRename} className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm-body font-semibold text-slate-700">
+                Template Name
+              </Label>
+              <Input
+                value={renameName}
+                onChange={(e) => setRenameName(e.target.value)}
+                placeholder="Enter new name"
+                required
+                autoFocus
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setRenameOpen(false);
+                  setRenameTarget(null);
+                  setRenameName("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading || !renameName.trim()}
+                className="bg-primary-600 font-semibold text-white hover:bg-primary-700"
+              >
+                {loading && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Rename
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

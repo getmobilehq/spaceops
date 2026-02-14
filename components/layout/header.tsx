@@ -1,17 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Bell, ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import Link from "next/link";
+
+const SECTION_TITLES: [string, string][] = [
+  ["/admin/users", "User Management"],
+  ["/admin/checklists/", "Edit Checklist"],
+  ["/admin/checklists", "Checklists"],
+  ["/admin/settings", "Settings"],
+  ["/deficiencies", "Deficiencies"],
+  ["/reports", "Reports"],
+  ["/notifications", "Notifications"],
+  ["/profile", "Profile"],
+  ["/more", "More"],
+];
 
 interface HeaderProps {
   title?: string;
 }
 
 export function Header({ title }: HeaderProps) {
+  const pathname = usePathname();
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -29,11 +43,27 @@ export function Header({ title }: HeaderProps) {
     return () => clearInterval(interval);
   }, []);
 
+  // Determine if we're in a section reachable from the More page
+  const sectionTitle = SECTION_TITLES.find(([path]) =>
+    pathname.startsWith(path)
+  )?.[1];
+  const showBackNav = sectionTitle && sectionTitle !== "More";
+
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
       <div className="flex h-14 items-center justify-between px-4">
         <div className="flex items-center gap-3">
-          {title ? (
+          {showBackNav ? (
+            <>
+              <Link
+                href="/more"
+                className="-ml-1 flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+              <h1 className="text-h3 text-slate-900">{sectionTitle}</h1>
+            </>
+          ) : title ? (
             <h1 className="text-h3 text-slate-900">{title}</h1>
           ) : (
             <Logo size="sm" />
