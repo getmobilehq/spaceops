@@ -8,6 +8,7 @@ import { createScheduleSchema } from "@/lib/validators/schemas";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -226,6 +227,11 @@ export function ScheduleFormDialog({
           <DialogTitle>
             {editingSchedule ? "Edit Schedule" : "New Inspection Schedule"}
           </DialogTitle>
+          <DialogDescription>
+            {editingSchedule
+              ? "Update the schedule configuration below."
+              : "Set up a recurring inspection reminder for a building."}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

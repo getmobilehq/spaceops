@@ -10,7 +10,7 @@
 -- Note: spaces already has idx_spaces_name_search from 00001
 
 CREATE INDEX IF NOT EXISTS idx_buildings_search ON buildings USING GIN (
-  to_tsvector('english', coalesce(name, '') || ' ' || coalesce(address, ''))
+  to_tsvector('english', coalesce(name, '') || ' ' || coalesce(street, '') || ' ' || coalesce(city, '') || ' ' || coalesce(state, ''))
 );
 
 CREATE INDEX IF NOT EXISTS idx_tasks_search ON tasks USING GIN (
