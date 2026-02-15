@@ -117,6 +117,26 @@ export function makeTask(overrides: Record<string, unknown> = {}) {
   };
 }
 
+export function makeSchedule(overrides: Record<string, unknown> = {}) {
+  return {
+    id: uuid(),
+    org_id: uuid(),
+    building_id: uuid(),
+    checklist_template_id: null,
+    frequency: "daily" as const,
+    day_of_week: null,
+    day_of_month: null,
+    time_of_day: "09:00",
+    assigned_to: null,
+    enabled: true,
+    last_triggered_at: null,
+    next_due_at: timestamp(),
+    created_at: timestamp(),
+    updated_at: timestamp(),
+    ...overrides,
+  };
+}
+
 export function makeChecklistItem(overrides: Record<string, unknown> = {}) {
   return {
     id: uuid(),

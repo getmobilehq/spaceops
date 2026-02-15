@@ -17,6 +17,7 @@ import {
   Bell,
   CheckCheck,
   Loader2,
+  CalendarClock,
 } from "lucide-react";
 import type { Notification } from "@/lib/types/helpers";
 import type { NotificationType } from "@/lib/types/database";
@@ -33,6 +34,7 @@ const typeIcons: Record<NotificationType, React.ElementType> = {
   inspection_completed: CheckCircle2,
   report_sent: FileText,
   invitation: UserPlus,
+  inspection_scheduled: CalendarClock,
 };
 
 function groupByDate(notifications: Notification[]) {

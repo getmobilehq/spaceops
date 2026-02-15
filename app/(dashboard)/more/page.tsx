@@ -10,6 +10,7 @@ import {
   User,
   LogOut,
   ScrollText,
+  Calendar,
 } from "lucide-react";
 import type { UserProfile } from "@/lib/types/helpers";
 import { MoreMenuItem, MoreMenuSection } from "@/components/layout/more-menu-item";
@@ -33,6 +34,7 @@ export default async function MorePage() {
 
   const profile = profileData as unknown as UserProfile;
   const isAdmin = profile.role === "admin";
+  const isSupervisor = profile.role === "supervisor";
 
   // Fetch counts in parallel
   const [userCountRes, templateCountRes, deficiencyCountRes, notifCountRes] =
@@ -102,6 +104,11 @@ export default async function MorePage() {
             href="/admin/settings"
           />
           <MoreMenuItem
+            icon={Calendar}
+            label="Schedules"
+            href="/admin/schedules"
+          />
+          <MoreMenuItem
             icon={ScrollText}
             label="Audit Log"
             href="/admin/audit-log"
@@ -117,6 +124,13 @@ export default async function MorePage() {
           href="/deficiencies"
           count={deficiencyCount}
         />
+        {isSupervisor && (
+          <MoreMenuItem
+            icon={Calendar}
+            label="Schedules"
+            href="/admin/schedules"
+          />
+        )}
         <MoreMenuItem
           icon={FileText}
           label="Reports"

@@ -7,3 +7,12 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Cron jobs — triggered via external service (e.g., cron-job.org, EasyCron)
+# All endpoints require: Authorization: Bearer $CRON_SECRET header
+#
+# GET /api/cron/sla-warning                     — every 30 min
+# GET /api/cron/overdue-check                   — every hour
+# GET /api/cron/cleanup-expired                 — daily at 2 AM
+# GET /api/cron/send-scheduled-reports          — every hour (checks due reports)
+# GET /api/cron/trigger-scheduled-inspections   — every 30 min (checks due schedules)

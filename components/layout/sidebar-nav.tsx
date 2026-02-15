@@ -17,7 +17,10 @@ import {
   ScrollText,
   LogOut,
   Loader2,
+  Search,
+  Calendar,
 } from "lucide-react";
+import { GlobalSearch } from "@/components/search/global-search";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/shared/logo";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -61,6 +64,7 @@ function getNavSections(role: UserRole): NavSection[] {
           items: [
             { label: "Users", href: "/admin/users", icon: Users },
             { label: "Checklists", href: "/admin/checklists", icon: ClipboardList },
+            { label: "Schedules", href: "/admin/schedules", icon: Calendar },
             { label: "Settings", href: "/admin/settings", icon: Settings },
             { label: "Audit Log", href: "/admin/audit-log", icon: ScrollText },
           ],
@@ -81,6 +85,7 @@ function getNavSections(role: UserRole): NavSection[] {
           title: "Operations",
           items: [
             { label: "Deficiencies", href: "/deficiencies", icon: AlertTriangle },
+            { label: "Schedules", href: "/admin/schedules", icon: Calendar },
             { label: "Reports", href: "/reports", icon: FileText },
             { label: "Notifications", href: "/notifications", icon: Bell },
           ],
@@ -119,6 +124,7 @@ export function SidebarNav({ role, userName }: SidebarNavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const sections = getNavSections(role);
 
   function isActive(href: string): boolean {
@@ -139,6 +145,20 @@ export function SidebarNav({ role, userName }: SidebarNavProps) {
       {/* Logo */}
       <div className="flex h-14 items-center px-5">
         <Logo variant="dark" size="sm" />
+      </div>
+
+      {/* Search */}
+      <div className="px-3 py-2">
+        <button
+          onClick={() => setSearchOpen(true)}
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-400 transition-colors hover:bg-slate-900 hover:text-slate-200"
+        >
+          <Search className="h-5 w-5 shrink-0" />
+          <span className="flex-1 text-left">Search</span>
+          <kbd className="rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
+            Cmd+K
+          </kbd>
+        </button>
       </div>
 
       {/* Navigation sections */}
@@ -198,6 +218,8 @@ export function SidebarNav({ role, userName }: SidebarNavProps) {
           Sign out
         </button>
       </div>
+
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
     </aside>
   );
 }

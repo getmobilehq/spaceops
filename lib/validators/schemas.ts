@@ -206,3 +206,37 @@ export const taskFilterSchema = z.object({
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 export type TaskFilterInput = z.infer<typeof taskFilterSchema>;
+
+// Global search schema
+export const globalSearchSchema = z.object({
+  q: z.string().min(2, "Search query must be at least 2 characters").max(100),
+  type: z
+    .enum(["all", "buildings", "spaces", "tasks", "deficiencies", "checklists"])
+    .optional()
+    .default("all"),
+});
+
+export type GlobalSearchInput = z.infer<typeof globalSearchSchema>;
+
+// Inspection schedule schemas
+export const createScheduleSchema = z.object({
+  building_id: z.string().uuid("Please select a building"),
+  checklist_template_id: z.string().uuid().optional().or(z.literal("")),
+  frequency: z.enum(["daily", "weekly", "biweekly", "monthly"]),
+  day_of_week: z.coerce.number().int().min(0).max(6).optional(),
+  day_of_month: z.coerce.number().int().min(1).max(28).optional(),
+  time_of_day: z.string().regex(/^\d{2}:\d{2}$/, "Time must be in HH:MM format"),
+  assigned_to: z.string().uuid().optional().or(z.literal("")),
+});
+
+export type CreateScheduleInput = z.infer<typeof createScheduleSchema>;
+
+// Scheduled report config schema
+export const updateReportScheduleSchema = z.object({
+  building_id: z.string().uuid(),
+  enabled: z.boolean(),
+  schedule_cron: z.string().optional(),
+  recipient_emails: z.array(z.string().email()).optional(),
+});
+
+export type UpdateReportScheduleInput = z.infer<typeof updateReportScheduleSchema>;

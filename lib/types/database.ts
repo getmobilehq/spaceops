@@ -20,10 +20,12 @@ export type NotificationType =
   | "deficiency_created"
   | "inspection_completed"
   | "report_sent"
-  | "invitation";
+  | "invitation"
+  | "inspection_scheduled";
 export type ReportTriggerType = "scheduled" | "on_completion";
 export type ReportType = "summary" | "detailed";
 export type AuditAction = "INSERT" | "UPDATE" | "DELETE";
+export type ScheduleFrequency = "daily" | "weekly" | "biweekly" | "monthly";
 
 export interface Database {
   public: {
@@ -737,6 +739,56 @@ export interface Database {
         };
         Relationships: [];
       };
+      inspection_schedules: {
+        Row: {
+          id: string;
+          org_id: string;
+          building_id: string;
+          checklist_template_id: string | null;
+          frequency: ScheduleFrequency;
+          day_of_week: number | null;
+          day_of_month: number | null;
+          time_of_day: string;
+          assigned_to: string | null;
+          enabled: boolean;
+          last_triggered_at: string | null;
+          next_due_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          building_id: string;
+          checklist_template_id?: string | null;
+          frequency?: ScheduleFrequency;
+          day_of_week?: number | null;
+          day_of_month?: number | null;
+          time_of_day?: string;
+          assigned_to?: string | null;
+          enabled?: boolean;
+          last_triggered_at?: string | null;
+          next_due_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          org_id?: string;
+          building_id?: string;
+          checklist_template_id?: string | null;
+          frequency?: ScheduleFrequency;
+          day_of_week?: number | null;
+          day_of_month?: number | null;
+          time_of_day?: string;
+          assigned_to?: string | null;
+          enabled?: boolean;
+          last_triggered_at?: string | null;
+          next_due_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -752,6 +804,7 @@ export interface Database {
       report_trigger_type: ReportTriggerType;
       report_type: ReportType;
       audit_action: AuditAction;
+      schedule_frequency: ScheduleFrequency;
     };
   };
 }
