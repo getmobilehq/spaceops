@@ -1,15 +1,13 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { Building2, TrendingUp, AlertTriangle } from "lucide-react";
+import { Building2, TrendingUp, AlertTriangle, ShieldCheck } from "lucide-react";
 import type {
   UserProfile,
-  ClientBuildingLink,
-  Building,
-  ClientOrg,
 } from "@/lib/types/helpers";
 import { KpiCard } from "@/components/dashboard/kpi-card";
-import { BuildingCard } from "@/components/dashboard/building-card";
+import { ClientBuildingCard } from "@/components/dashboard/client-building-card";
 import { getAllBuildingStats } from "@/lib/utils/dashboard-queries";
+import { getClientComplianceData } from "@/lib/utils/analytics-queries";
 
 export default async function ClientDashboardPage() {
   const supabase = await createServerClient();
@@ -60,11 +58,20 @@ export default async function ClientDashboardPage() {
     );
   }
 
-  // Get building stats
-  const buildingStats =
+  // Get building stats + compliance data in parallel
+  const [buildingStats, complianceData] = await Promise.all([
     buildingIds.length > 0
-      ? await getAllBuildingStats(supabase, buildingIds)
-      : [];
+      ? getAllBuildingStats(supabase, buildingIds)
+      : Promise.resolve([]),
+    buildingIds.length > 0
+      ? getClientComplianceData(supabase, buildingIds)
+      : Promise.resolve([]),
+  ]);
+
+  // Build compliance lookup
+  const complianceMap = Object.fromEntries(
+    complianceData.map((c) => [c.buildingId, c])
+  );
 
   // Compute aggregate KPIs
   const totalBuildings = buildingStats.length;
@@ -79,6 +86,15 @@ export default async function ClientDashboardPage() {
     (sum, s) => sum + s.openDeficiencyCount,
     0
   );
+  const complianceScores = complianceData
+    .map((c) => c.complianceScore)
+    .filter((s): s is number => s !== null);
+  const avgCompliance =
+    complianceScores.length > 0
+      ? Math.round(
+          complianceScores.reduce((a, b) => a + b, 0) / complianceScores.length
+        )
+      : null;
 
   return (
     <div className="p-4 lg:mx-auto lg:max-w-7xl lg:px-6 lg:py-6">
@@ -88,7 +104,7 @@ export default async function ClientDashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <KpiCard
           label="Buildings"
           value={totalBuildings}
@@ -104,6 +120,11 @@ export default async function ClientDashboardPage() {
           value={totalDeficiencies}
           icon={AlertTriangle}
         />
+        <KpiCard
+          label="Avg Compliance"
+          value={avgCompliance !== null ? `${avgCompliance}%` : "--"}
+          icon={ShieldCheck}
+        />
       </div>
 
       {/* Building Cards */}
@@ -118,18 +139,24 @@ export default async function ClientDashboardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {buildingStats.map((stats) => (
-              <BuildingCard
-                key={stats.buildingId}
-                id={stats.buildingId}
-                name={stats.buildingName}
-                address={stats.address}
-                passRate={stats.passRate}
-                openDeficiencyCount={stats.openDeficiencyCount}
-                inspectedToday={stats.inspectedToday}
-                totalSpaces={stats.totalSpaces}
-              />
-            ))}
+            {buildingStats.map((stats) => {
+              const compliance = complianceMap[stats.buildingId];
+              return (
+                <ClientBuildingCard
+                  key={stats.buildingId}
+                  id={stats.buildingId}
+                  name={stats.buildingName}
+                  address={stats.address}
+                  passRate={stats.passRate}
+                  openDeficiencyCount={stats.openDeficiencyCount}
+                  inspectedToday={stats.inspectedToday}
+                  totalSpaces={stats.totalSpaces}
+                  complianceScore={compliance?.complianceScore ?? null}
+                  monthlyCompletionRate={compliance?.monthlyCompletionRate ?? null}
+                  deficiencyTrend={compliance?.deficiencyTrend ?? 0}
+                />
+              );
+            })}
           </div>
         )}
       </div>

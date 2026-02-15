@@ -43,6 +43,7 @@ function getNavItems(role: UserRole): NavItem[] {
       ];
     case "staff":
       return [
+        { label: "Home", href: "/staff", icon: Home },
         { label: "My Tasks", href: "/tasks", icon: ClipboardList },
         { label: "Alerts", href: "/notifications", icon: AlertCircle },
         { label: "Profile", href: "/profile", icon: User },
@@ -66,7 +67,7 @@ export function BottomNav({ role }: BottomNavProps) {
             item.href === "/"
               ? pathname === "/"
               : item.href === "/more"
-                ? ["/more", "/profile", "/admin", "/deficiencies", "/reports", "/notifications"].some(
+                ? ["/more", "/profile", "/admin", "/deficiencies", "/reports", "/notifications", "/analytics"].some(
                     (p) => pathname.startsWith(p)
                   )
                 : pathname.startsWith(item.href);

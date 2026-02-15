@@ -55,6 +55,7 @@ function getNavSections(role: UserRole): NavSection[] {
           title: "Operations",
           items: [
             { label: "Deficiencies", href: "/deficiencies", icon: AlertTriangle },
+            { label: "Analytics", href: "/analytics", icon: BarChart3 },
             { label: "Reports", href: "/reports", icon: FileText },
             { label: "Notifications", href: "/notifications", icon: Bell },
           ],
@@ -85,6 +86,7 @@ function getNavSections(role: UserRole): NavSection[] {
           title: "Operations",
           items: [
             { label: "Deficiencies", href: "/deficiencies", icon: AlertTriangle },
+            { label: "Analytics", href: "/analytics", icon: BarChart3 },
             { label: "Schedules", href: "/admin/schedules", icon: Calendar },
             { label: "Reports", href: "/reports", icon: FileText },
             { label: "Notifications", href: "/notifications", icon: Bell },
@@ -107,6 +109,7 @@ function getNavSections(role: UserRole): NavSection[] {
         {
           title: "Main",
           items: [
+            { label: "Home", href: "/staff", icon: Home },
             { label: "My Tasks", href: "/tasks", icon: ClipboardList },
             { label: "Alerts", href: "/notifications", icon: Bell },
           ],
@@ -128,7 +131,7 @@ export function SidebarNav({ role, userName }: SidebarNavProps) {
   const sections = getNavSections(role);
 
   function isActive(href: string): boolean {
-    if (href === "/" || href === "/client") return pathname === href;
+    if (href === "/" || href === "/client" || href === "/staff") return pathname === href;
     return pathname.startsWith(href);
   }
 

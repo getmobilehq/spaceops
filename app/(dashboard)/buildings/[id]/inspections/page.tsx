@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Building, UserProfile } from "@/lib/types/helpers";
 import { getRecentInspections } from "@/lib/utils/dashboard-queries";
 import { InspectionHistory } from "./inspection-history";
+import { ExportButton } from "@/components/shared/export-button";
 
 export default async function BuildingInspectionsPage({
   params,
@@ -68,9 +69,15 @@ export default async function BuildingInspectionsPage({
         {building.name}
       </Link>
 
-      <div className="mb-6 flex items-center gap-2">
-        <History className="h-6 w-6 text-slate-400" />
-        <h1 className="text-h1 text-slate-900">Inspection History</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <History className="h-6 w-6 text-slate-400" />
+          <h1 className="text-h1 text-slate-900">Inspection History</h1>
+        </div>
+        <ExportButton
+          exportType="inspections"
+          filters={{ building_id: id }}
+        />
       </div>
 
       <InspectionHistory

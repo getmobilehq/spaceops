@@ -22,6 +22,7 @@ import type { TaskStatus, TaskPriority } from "@/lib/types/database";
 import type { EnrichedTask } from "./page";
 import { TaskDetailSheet } from "./task-detail-sheet";
 import { CreateTaskDialog } from "./create-task-dialog";
+import { ExportButton } from "@/components/shared/export-button";
 
 interface TaskListProps {
   tasks: EnrichedTask[];
@@ -179,14 +180,25 @@ export function TaskList({
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-h1 text-slate-900">Tasks</h1>
-        {isAdmin && (
-          <CreateTaskDialog
-            userId={userId}
-            buildings={buildings}
-            spaces={spaces}
-            staffUsers={staffUsers}
+        <div className="flex items-center gap-2">
+          <ExportButton
+            exportType="tasks"
+            filters={{
+              status: statusFilter,
+              priority: priorityFilter,
+              building_id: buildingFilter !== "all" ? buildingFilter : undefined,
+              assignee: assigneeFilter !== "all" ? assigneeFilter : undefined,
+            }}
           />
-        )}
+          {isAdmin && (
+            <CreateTaskDialog
+              userId={userId}
+              buildings={buildings}
+              spaces={spaces}
+              staffUsers={staffUsers}
+            />
+          )}
+        </div>
       </div>
 
       {/* Status pills */}

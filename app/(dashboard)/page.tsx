@@ -27,6 +27,8 @@ import {
 import { RepeatFailuresWidget } from "@/components/dashboard/repeat-failures-widget";
 import { TrendChart } from "@/components/dashboard/trend-chart";
 import { QuickActionCard } from "@/components/dashboard/quick-action-card";
+import { InspectorLeaderboard } from "@/components/dashboard/inspector-leaderboard";
+import { getInspectorPerformance } from "@/lib/utils/analytics-queries";
 import { formatRelativeTime } from "@/lib/utils/format";
 
 export default async function HomePage() {
@@ -47,9 +49,12 @@ export default async function HomePage() {
 
   const profile = profileData as unknown as UserProfile;
 
-  // Redirect clients to their dashboard
+  // Redirect clients and staff to their dashboards
   if (profile.role === "client") {
     redirect("/client");
+  }
+  if (profile.role === "staff") {
+    redirect("/staff");
   }
 
   // Fetch buildings
@@ -63,6 +68,11 @@ export default async function HomePage() {
   const buildingIds = buildings.map((b) => b.id);
 
   // Fetch dashboard data in parallel
+  // Date range for inspector performance (last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const performanceDateRange = { from: thirtyDaysAgo, to: new Date() };
+
   const [
     inspectionCount,
     deficiencyCount,
@@ -75,6 +85,7 @@ export default async function HomePage() {
     trendData90,
     adminUserCount,
     adminTemplateCount,
+    inspectorPerformance,
   ] = await Promise.all([
     getTodayInspectionCount(supabase),
     getOpenDeficiencyCount(supabase),
@@ -102,6 +113,7 @@ export default async function HomePage() {
           .eq("archived", false)
           .then((r) => r.count ?? 0)
       : Promise.resolve(0),
+    getInspectorPerformance(supabase, performanceDateRange),
   ]);
 
   return (
@@ -243,9 +255,19 @@ export default async function HomePage() {
         />
       </div>
 
-      {/* Repeat Failures */}
-      <div className="mt-6">
+      {/* Repeat Failures + Inspector Leaderboard */}
+      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
         <RepeatFailuresWidget failures={repeatFailures} />
+        <InspectorLeaderboard
+          inspectors={inspectorPerformance
+            .sort((a, b) => b.inspectionCount - a.inspectionCount)
+            .slice(0, 5)
+            .map((ip) => ({
+              inspectorName: ip.inspectorName,
+              inspectionCount: ip.inspectionCount,
+              avgPassRate: ip.avgPassRate,
+            }))}
+        />
       </div>
     </div>
   );

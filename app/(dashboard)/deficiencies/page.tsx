@@ -8,6 +8,7 @@ import type {
   UserProfile,
 } from "@/lib/types/helpers";
 import { DeficiencyList } from "./deficiency-list";
+import { ExportButton } from "@/components/shared/export-button";
 
 export default async function DeficienciesPage() {
   const supabase = await createServerClient();
@@ -87,7 +88,10 @@ export default async function DeficienciesPage() {
 
   return (
     <div className="p-4 lg:mx-auto lg:max-w-7xl lg:px-6 lg:py-6">
-      <h1 className="mb-4 text-h1 text-slate-900">Deficiencies</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-h1 text-slate-900">Deficiencies</h1>
+        <ExportButton exportType="deficiencies" />
+      </div>
       <DeficiencyList
         deficiencies={enriched}
         buildings={buildings}

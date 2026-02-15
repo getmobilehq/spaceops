@@ -240,3 +240,39 @@ export const updateReportScheduleSchema = z.object({
 });
 
 export type UpdateReportScheduleInput = z.infer<typeof updateReportScheduleSchema>;
+
+// Analytics filter schema
+export const analyticsFilterSchema = z.object({
+  period: z.enum(["7d", "30d", "90d", "custom"]).default("30d"),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  building_id: z.string().uuid().optional(),
+});
+
+export type AnalyticsFilterInput = z.infer<typeof analyticsFilterSchema>;
+
+// Export schemas
+export const exportTasksSchema = z.object({
+  status: z.enum(["all", "open", "in_progress", "closed"]).optional(),
+  priority: z.enum(["all", "critical", "high", "medium", "low"]).optional(),
+  building_id: z.string().uuid().optional(),
+  date_from: z.string().optional(),
+  date_to: z.string().optional(),
+});
+
+export const exportDeficienciesSchema = z.object({
+  status: z.enum(["all", "open", "in_progress", "closed"]).optional(),
+  building_id: z.string().uuid().optional(),
+  date_from: z.string().optional(),
+  date_to: z.string().optional(),
+});
+
+export const exportInspectionsSchema = z.object({
+  building_id: z.string().uuid().optional(),
+  date_from: z.string().optional(),
+  date_to: z.string().optional(),
+});
+
+export type ExportTasksInput = z.infer<typeof exportTasksSchema>;
+export type ExportDeficienciesInput = z.infer<typeof exportDeficienciesSchema>;
+export type ExportInspectionsInput = z.infer<typeof exportInspectionsSchema>;

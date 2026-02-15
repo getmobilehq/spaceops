@@ -16,6 +16,8 @@ const SECTION_TITLES: [string, string][] = [
   ["/admin/checklists/", "Edit Checklist"],
   ["/admin/checklists", "Checklists"],
   ["/admin/settings", "Settings"],
+  ["/analytics", "Analytics"],
+  ["/staff", "Home"],
   ["/deficiencies", "Deficiencies"],
   ["/reports", "Reports"],
   ["/notifications", "Notifications"],

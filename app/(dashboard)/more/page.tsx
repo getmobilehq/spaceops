@@ -11,6 +11,7 @@ import {
   LogOut,
   ScrollText,
   Calendar,
+  BarChart3,
 } from "lucide-react";
 import type { UserProfile } from "@/lib/types/helpers";
 import { MoreMenuItem, MoreMenuSection } from "@/components/layout/more-menu-item";
@@ -124,6 +125,13 @@ export default async function MorePage() {
           href="/deficiencies"
           count={deficiencyCount}
         />
+        {(isAdmin || isSupervisor) && (
+          <MoreMenuItem
+            icon={BarChart3}
+            label="Analytics"
+            href="/analytics"
+          />
+        )}
         {isSupervisor && (
           <MoreMenuItem
             icon={Calendar}
