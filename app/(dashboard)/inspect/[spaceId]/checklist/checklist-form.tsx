@@ -466,6 +466,8 @@ export function ChecklistForm({
                       <div className="flex shrink-0 gap-1">
                         <button
                           type="button"
+                          aria-label="Mark as pass"
+                          aria-pressed={result === "pass"}
                           onClick={() => setResult(item.id, "pass")}
                           className={`flex h-9 w-9 items-center justify-center rounded-md border-2 transition-colors ${
                             result === "pass"
@@ -477,6 +479,8 @@ export function ChecklistForm({
                         </button>
                         <button
                           type="button"
+                          aria-label="Mark as fail"
+                          aria-pressed={result === "fail"}
                           onClick={() => setResult(item.id, "fail")}
                           className={`flex h-9 w-9 items-center justify-center rounded-md border-2 transition-colors ${
                             result === "fail"

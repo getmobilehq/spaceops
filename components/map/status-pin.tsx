@@ -38,15 +38,26 @@ export function StatusPin({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label={`${spaceName} — ${STATUS_LABELS[status]}`}
       style={style}
       className="group absolute z-10 cursor-pointer"
       onClick={(e) => {
         e.stopPropagation();
         router.push(`/inspect/${spaceId}`);
       }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          router.push(`/inspect/${spaceId}`);
+        }
+      }}
       onPointerDown={(e) => e.stopPropagation()}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
+      onFocus={() => setShowTooltip(true)}
+      onBlur={() => setShowTooltip(false)}
       onTouchStart={() => setShowTooltip(true)}
       onTouchEnd={() => setTimeout(() => setShowTooltip(false), 2000)}
     >

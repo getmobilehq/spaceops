@@ -17,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SpaceOps",
+  title: { default: "SpaceOps", template: "%s — SpaceOps" },
   description: "Quality control platform for commercial janitorial companies",
   manifest: "/manifest.json",
   appleWebApp: {
@@ -26,8 +26,18 @@ export const metadata: Metadata = {
     title: "SpaceOps",
   },
   icons: {
-    icon: "/icons/icon-192.png",
     apple: "/icons/icon-192.png",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "SpaceOps",
+    title: "SpaceOps",
+    description: "Quality control platform for commercial janitorial companies",
+  },
+  twitter: {
+    card: "summary",
+    title: "SpaceOps",
+    description: "Quality control platform for commercial janitorial companies",
   },
 };
 

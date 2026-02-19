@@ -60,7 +60,7 @@ export function BottomNav({ role }: BottomNavProps) {
   const items = getNavItems(role);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-800 bg-slate-950 pb-[env(safe-area-inset-bottom)]">
+    <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-800 bg-slate-950 pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-center justify-around px-2">
         {items.map((item) => {
           const isActive =
@@ -77,6 +77,7 @@ export function BottomNav({ role }: BottomNavProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                aria-label="Scan QR code"
                 className="relative flex flex-col items-center"
               >
                 <div className="-mt-5 flex h-12 w-12 items-center justify-center rounded-full bg-primary-500 shadow-lg shadow-primary-500/30">
@@ -93,6 +94,7 @@ export function BottomNav({ role }: BottomNavProps) {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
                 "flex flex-col items-center gap-0.5 py-2 px-3",
                 isActive ? "text-primary-400" : "text-slate-500"

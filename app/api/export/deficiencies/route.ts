@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { exportDeficienciesSchema } from "@/lib/validators/schemas";
 import { toCsvString } from "@/lib/utils/csv";
+import { rateLimit, rateLimitHeaders } from "@/lib/utils/rate-limit";
 import type { Deficiency } from "@/lib/types/helpers";
 
 export async function POST(req: NextRequest) {
@@ -12,6 +13,14 @@ export async function POST(req: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const limited = rateLimit(user.id, "export", { maxRequests: 10, windowMs: 60_000 });
+  if (!limited.success) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Try again later." },
+      { status: 429, headers: rateLimitHeaders(limited) }
+    );
   }
 
   const body = await req.json();

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBuildingStats } from "@/lib/utils/dashboard-queries";
 import { KpiCard } from "@/components/dashboard/kpi-card";
@@ -10,6 +11,53 @@ import {
   Building2,
 } from "lucide-react";
 import type { SharedDashboard, Building } from "@/lib/types/helpers";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  const supabase = createAdminClient();
+
+  const { data: shareData } = await supabase
+    .from("shared_dashboards")
+    .select("building_id, expires_at")
+    .eq("token", token)
+    .single();
+
+  const share = shareData as unknown as { building_id: string; expires_at: string | null } | null;
+  if (!share || (share.expires_at && new Date(share.expires_at) < new Date())) {
+    return {
+      title: "Dashboard Not Found",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const { data: buildingData } = await supabase
+    .from("buildings")
+    .select("name, street, city, state")
+    .eq("id", share.building_id)
+    .single();
+
+  const building = buildingData as unknown as { name: string; street: string | null; city: string | null; state: string | null } | null;
+  if (!building) {
+    return {
+      title: "Dashboard Not Found",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const address = [building.street, building.city, building.state].filter(Boolean).join(", ");
+
+  return {
+    title: `${building.name} — SpaceOps Dashboard`,
+    description: address
+      ? `Live quality dashboard for ${building.name} at ${address}`
+      : `Live quality dashboard for ${building.name}`,
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function SharedDashboardPage({
   params,

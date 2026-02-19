@@ -8,6 +8,10 @@ on:
     - cron: "0 * * * *"
     # Cleanup expired — daily at 2 AM UTC
     - cron: "0 2 * * *"
+    # Scheduled reports — every 6 hours
+    - cron: "0 */6 * * *"
+    # Scheduled inspections — every 15 minutes
+    - cron: "*/15 * * * *"
 
 jobs:
   sla-warning:
@@ -16,7 +20,7 @@ jobs:
     steps:
       - name: Trigger SLA warning check
         run: |
-          curl -s -o /dev/null -w "%{http_code}" \
+          curl -sf -o /dev/null -w "%{http_code}" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "${{ secrets.APP_URL }}/api/cron/sla-warning"
 
@@ -26,7 +30,7 @@ jobs:
     steps:
       - name: Trigger overdue task check
         run: |
-          curl -s -o /dev/null -w "%{http_code}" \
+          curl -sf -o /dev/null -w "%{http_code}" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "${{ secrets.APP_URL }}/api/cron/overdue-check"
 
@@ -36,6 +40,26 @@ jobs:
     steps:
       - name: Trigger cleanup of expired data
         run: |
-          curl -s -o /dev/null -w "%{http_code}" \
+          curl -sf -o /dev/null -w "%{http_code}" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "${{ secrets.APP_URL }}/api/cron/cleanup-expired"
+
+  send-scheduled-reports:
+    if: github.event.schedule == '0 */6 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger scheduled report delivery
+        run: |
+          curl -sf -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/send-scheduled-reports"
+
+  trigger-scheduled-inspections:
+    if: github.event.schedule == '*/15 * * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger scheduled inspection reminders
+        run: |
+          curl -sf -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/trigger-scheduled-inspections"

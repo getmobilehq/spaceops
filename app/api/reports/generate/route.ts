@@ -8,6 +8,7 @@ import {
   type ReportInspection,
   type ReportDeficiency,
 } from "@/lib/utils/pdf";
+import { rateLimit, rateLimitHeaders } from "@/lib/utils/rate-limit";
 import React from "react";
 import type {
   Building,
@@ -26,6 +27,14 @@ export async function POST(req: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const limited = rateLimit(user.id, "reports", { maxRequests: 5, windowMs: 60_000 });
+  if (!limited.success) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Try again later." },
+      { status: 429, headers: rateLimitHeaders(limited) }
+    );
   }
 
   const body = await req.json();

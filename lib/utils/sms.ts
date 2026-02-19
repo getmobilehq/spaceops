@@ -1,4 +1,5 @@
 import twilio from "twilio";
+import * as Sentry from "@sentry/nextjs";
 
 function getTwilioClient() {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -26,6 +27,7 @@ export async function sendSms(params: {
     return { success: true, sid: result.sid };
   } catch (err) {
     console.error("SMS send error:", err);
+    Sentry.captureException(err, { tags: { context: "sms" } });
     return { success: false, error: String(err) };
   }
 }
@@ -47,6 +49,7 @@ export async function sendWhatsApp(params: {
     return { success: true, sid: result.sid };
   } catch (err) {
     console.error("WhatsApp send error:", err);
+    Sentry.captureException(err, { tags: { context: "sms-whatsapp" } });
     return { success: false, error: String(err) };
   }
 }

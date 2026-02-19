@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { setAuditContextAdmin } from "@/lib/utils/audit";
 import { sendSms, sendWhatsApp } from "@/lib/utils/sms";
@@ -107,6 +108,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ checked: tasks.length, smsSent });
   } catch (err) {
     console.error("SLA warning cron error:", err);
+    Sentry.captureException(err, { tags: { context: "cron" } });
     return NextResponse.json(
       { error: "Internal error" },
       { status: 500 }

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import * as Sentry from "@sentry/nextjs";
 
 /**
  * Sets audit context for admin/service-role client mutations.
@@ -17,5 +18,6 @@ export async function setAuditContextAdmin(
   });
   if (error) {
     console.error("Failed to set audit context:", error.message);
+    Sentry.captureException(error, { tags: { context: "audit" } });
   }
 }

@@ -154,6 +154,7 @@ export function SidebarNav({ role, userName }: SidebarNavProps) {
       <div className="px-3 py-2">
         <button
           onClick={() => setSearchOpen(true)}
+          aria-label="Search"
           className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-400 transition-colors hover:bg-slate-900 hover:text-slate-200"
         >
           <Search className="h-5 w-5 shrink-0" />
@@ -165,7 +166,7 @@ export function SidebarNav({ role, userName }: SidebarNavProps) {
       </div>
 
       {/* Navigation sections */}
-      <nav className="flex-1 overflow-y-auto px-3 py-2">
+      <nav aria-label="Main navigation" className="flex-1 overflow-y-auto px-3 py-2">
         {sections.map((section, i) => (
           <div key={section.title}>
             {i > 0 && <div className="my-2 border-t border-slate-800" />}
@@ -178,6 +179,7 @@ export function SidebarNav({ role, userName }: SidebarNavProps) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                     active
@@ -211,6 +213,7 @@ export function SidebarNav({ role, userName }: SidebarNavProps) {
         <button
           onClick={handleLogout}
           disabled={loggingOut}
+          aria-label="Sign out"
           className="mt-1 flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-900 hover:text-red-400"
         >
           {loggingOut ? (

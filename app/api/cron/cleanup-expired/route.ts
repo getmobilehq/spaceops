@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { setAuditContextAdmin } from "@/lib/utils/audit";
 
@@ -45,6 +46,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (err) {
     console.error("Cleanup cron error:", err);
+    Sentry.captureException(err, { tags: { context: "cron" } });
     return NextResponse.json(
       { error: "Internal error" },
       { status: 500 }

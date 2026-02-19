@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SpaceOps
+
+Quality control platform for commercial janitorial companies. Supervisors inspect building spaces via QR codes, failed items auto-create deficiencies and tasks, floor plan maps show live status pins, and clients receive auto-generated PDF reports.
+
+## Features
+
+- **QR-first inspections** — scan a room's QR code to start a checklist, no app store download (PWA)
+- **Floor plan maps** — upload PDFs, place drag-and-drop pins, live green/amber/red/grey status
+- **Automatic deficiency pipeline** — failed checklist items create deficiencies and tasks automatically
+- **PDF reports** — on-demand or auto-emailed when all spaces are inspected
+- **Multi-tenant with RLS** — database-level row isolation per organization
+- **SMS/WhatsApp notifications** — task assignments, SLA warnings, overdue alerts via Twilio
+- **Client dashboards** — read-only portfolio view with compliance scores and sharable links
+- **Scheduled inspections** — configurable daily/weekly/biweekly/monthly reminders
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 16 (App Router, React 19) |
+| Styling | Tailwind CSS v4 + shadcn/ui |
+| Database | Supabase (PostgreSQL, Auth, Realtime, Storage) |
+| Hosting | Netlify |
+| SMS | Twilio |
+| Email | Resend |
+| PDF | @react-pdf/renderer |
+| Charts | Recharts |
+| Monitoring | Sentry |
+| Testing | Vitest (unit) + Playwright (e2e) |
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- npm
+- Supabase CLI (`npx supabase init`)
+
+### Setup
 
 ```bash
+# Clone and install
+git clone <repo-url>
+cd spaceops
+npm install
+
+# Environment variables
+cp .env.example .env.local
+# Edit .env.local with your Supabase credentials
+
+# Start local Supabase
+npx supabase start
+# Apply migrations
+npx supabase db push
+
+# Run dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Testing
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Unit tests
+npx vitest run
 
-## Learn More
+# E2E tests (requires dev server running)
+npx playwright test
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Deployed on **Netlify** with `@netlify/plugin-nextjs`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Required environment variables in production:
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_APP_URL`, `CRON_SECRET`
+- Optional: `TWILIO_*`, `RESEND_*`, `SENTRY_*`
 
-## Deploy on Vercel
+Cron jobs (configured in `netlify.toml`):
+- SLA warning — every 30 minutes
+- Overdue check — hourly
+- Scheduled reports — every 6 hours
+- Scheduled inspections — every 15 minutes
+- Cleanup expired — daily at 2 AM
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Commit Convention
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+type(scope): description [STORY-ID]
+```
+
+Types: `feat`, `fix`, `chore`, `refactor`, `test`, `docs`

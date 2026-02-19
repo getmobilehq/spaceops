@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { setAuditContextAdmin } from "@/lib/utils/audit";
 import { renderToBuffer } from "@react-pdf/renderer";
@@ -250,6 +251,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ triggered: true, sentTo: recipientEmails });
   } catch (err) {
     console.error("Webhook error:", err);
+    Sentry.captureException(err, { tags: { context: "webhook" } });
     return NextResponse.json(
       { error: "Internal error" },
       { status: 500 }

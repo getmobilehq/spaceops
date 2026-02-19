@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import * as Sentry from "@sentry/nextjs";
 import type { NotificationType } from "@/lib/types/database";
 
 export async function createNotification(params: {
@@ -16,6 +17,7 @@ export async function createNotification(params: {
   });
   if (error) {
     console.error("Failed to create notification:", error);
+    Sentry.captureException(error, { tags: { context: "notifications" } });
   }
 }
 
@@ -38,5 +40,6 @@ export async function createBulkNotifications(
   const { error } = await supabase.from("notifications").insert(rows);
   if (error) {
     console.error("Failed to create bulk notifications:", error);
+    Sentry.captureException(error, { tags: { context: "notifications-bulk" } });
   }
 }

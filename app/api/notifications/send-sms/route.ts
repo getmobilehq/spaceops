@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { setAuditContextAdmin } from "@/lib/utils/audit";
 import { sendSms, sendWhatsApp } from "@/lib/utils/sms";
+import { rateLimit, rateLimitHeaders } from "@/lib/utils/rate-limit";
 import type { Task, UserProfile } from "@/lib/types/helpers";
 
 export async function POST(req: NextRequest) {
@@ -14,6 +16,14 @@ export async function POST(req: NextRequest) {
     } = await authSupabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const limited = rateLimit(user.id, "sms", { maxRequests: 20, windowMs: 60_000 });
+    if (!limited.success) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Try again later." },
+        { status: 429, headers: rateLimitHeaders(limited) }
+      );
     }
 
     const { task_id, type, assigned_to } = await req.json();
@@ -99,6 +109,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, smsSent, whatsappSent });
   } catch (err) {
     console.error("Send SMS error:", err);
+    Sentry.captureException(err, { tags: { context: "api" } });
     return NextResponse.json(
       { error: "Internal error" },
       { status: 500 }

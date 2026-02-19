@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { globalSearchSchema } from "@/lib/validators/schemas";
+import { rateLimit, rateLimitHeaders } from "@/lib/utils/rate-limit";
 import type { Building, Space, Task, Deficiency, ChecklistTemplate } from "@/lib/types/helpers";
 
 interface SearchResult {
@@ -19,6 +20,14 @@ export async function GET(req: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const limited = rateLimit(user.id, "search", { maxRequests: 30, windowMs: 60_000 });
+  if (!limited.success) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Try again later." },
+      { status: 429, headers: rateLimitHeaders(limited) }
+    );
   }
 
   const url = new URL(req.url);
