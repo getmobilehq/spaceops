@@ -6,8 +6,27 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { formatRelativeTime } from "@/lib/utils/format";
 import { toast } from "sonner";
-import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  RotateCcw,
+  Trash2,
+  Pencil,
+  Check,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { Building } from "@/lib/types/helpers";
 import type { DeficiencyStatus } from "@/lib/types/database";
 
@@ -51,6 +70,10 @@ export function DeficiencyList({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [resolutionComment, setResolutionComment] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [editingResolutionId, setEditingResolutionId] = useState<string | null>(null);
+  const [editResolutionText, setEditResolutionText] = useState("");
 
   const filtered = deficiencies.filter((d) => {
     if (statusFilter !== "all" && d.status !== statusFilter) return false;
@@ -87,6 +110,69 @@ export function DeficiencyList({
       router.refresh();
     }
 
+    setUpdatingId(null);
+  }
+
+  async function handleReopen(defId: string) {
+    setUpdatingId(defId);
+    const supabase = createBrowserSupabaseClient();
+    const { error } = await supabase
+      .from("deficiencies")
+      .update({
+        status: "open" as DeficiencyStatus,
+        resolved_at: null,
+        resolution_comment: null,
+      })
+      .eq("id", defId);
+
+    if (error) {
+      toast.error("Failed to reopen deficiency");
+    } else {
+      toast.success("Deficiency reopened");
+      router.refresh();
+    }
+    setUpdatingId(null);
+  }
+
+  async function handleDelete() {
+    if (!deleteId) return;
+    setDeleting(true);
+    const supabase = createBrowserSupabaseClient();
+
+    // Delete linked tasks first (FK constraint)
+    await supabase.from("tasks").delete().eq("deficiency_id", deleteId);
+
+    const { error } = await supabase
+      .from("deficiencies")
+      .delete()
+      .eq("id", deleteId);
+
+    if (error) {
+      toast.error("Failed to delete deficiency");
+    } else {
+      toast.success("Deficiency deleted");
+      setExpandedId(null);
+      router.refresh();
+    }
+    setDeleteId(null);
+    setDeleting(false);
+  }
+
+  async function handleUpdateResolution(defId: string) {
+    setUpdatingId(defId);
+    const supabase = createBrowserSupabaseClient();
+    const { error } = await supabase
+      .from("deficiencies")
+      .update({ resolution_comment: editResolutionText.trim() || null })
+      .eq("id", defId);
+
+    if (error) {
+      toast.error("Failed to update resolution comment");
+    } else {
+      toast.success("Resolution comment updated");
+      setEditingResolutionId(null);
+      router.refresh();
+    }
     setUpdatingId(null);
   }
 
@@ -214,6 +300,15 @@ export function DeficiencyList({
                             )}
                             Close
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setDeleteId(def.id)}
+                            className="text-fail hover:text-fail"
+                          >
+                            <Trash2 className="mr-1 h-3.5 w-3.5" />
+                            Delete
+                          </Button>
                         </div>
                         <textarea
                           className="w-full rounded-md border border-slate-200 px-3 py-2 text-body text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
@@ -228,18 +323,90 @@ export function DeficiencyList({
                     )}
 
                     {def.status === "closed" && (
-                      <div>
+                      <div className="space-y-3">
                         <p className="text-caption text-slate-400">
                           Resolved{" "}
                           {def.resolved_at
                             ? formatRelativeTime(def.resolved_at)
                             : ""}
                         </p>
-                        {def.resolution_comment && (
-                          <p className="mt-1 text-body text-slate-600">
-                            {def.resolution_comment}
-                          </p>
+
+                        {/* Editable resolution comment */}
+                        {editingResolutionId === def.id ? (
+                          <div className="flex items-start gap-2">
+                            <textarea
+                              className="flex-1 rounded-md border border-slate-200 px-3 py-2 text-body text-slate-700 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              rows={2}
+                              placeholder="Resolution comment"
+                              value={editResolutionText}
+                              onChange={(e) => setEditResolutionText(e.target.value)}
+                            />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 shrink-0 text-pass"
+                              disabled={updatingId === def.id}
+                              onClick={() => handleUpdateResolution(def.id)}
+                            >
+                              {updatingId === def.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Check className="h-4 w-4" />
+                              )}
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 shrink-0 text-slate-400"
+                              onClick={() => setEditingResolutionId(null)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-start gap-2">
+                            <p className="flex-1 text-body text-slate-600">
+                              {def.resolution_comment || "No resolution comment"}
+                            </p>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 shrink-0 text-slate-400 hover:text-slate-600"
+                              onClick={() => {
+                                setEditingResolutionId(def.id);
+                                setEditResolutionText(def.resolution_comment || "");
+                              }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         )}
+
+                        {/* Reopen + Delete actions */}
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={updatingId === def.id}
+                            onClick={() => handleReopen(def.id)}
+                          >
+                            {updatingId === def.id ? (
+                              <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                            )}
+                            Reopen
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setDeleteId(def.id)}
+                            className="text-fail hover:text-fail"
+                          >
+                            <Trash2 className="mr-1 h-3.5 w-3.5" />
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                     )}
 
@@ -261,6 +428,30 @@ export function DeficiencyList({
           })}
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Deficiency</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this deficiency and any linked tasks.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-fail text-white hover:bg-fail/90"
+            >
+              {deleting && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
