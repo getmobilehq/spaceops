@@ -16,6 +16,17 @@ import { Button } from "@/components/ui/button";
 import { formatRelativeTime } from "@/lib/utils/format";
 import { toast } from "sonner";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import {
   Loader2,
   MapPin,
   User,
@@ -24,6 +35,11 @@ import {
   Link2,
   AlertTriangle,
   Zap,
+  Copy,
+  Pencil,
+  Trash2,
+  Check,
+  X,
 } from "lucide-react";
 import type { TaskPriority, TaskStatus } from "@/lib/types/database";
 import type { EnrichedTask } from "./page";
@@ -51,6 +67,9 @@ export function TaskDetailSheet({
   const [dueDate, setDueDate] = useState<string>("");
   const [resolutionComment, setResolutionComment] = useState("");
   const [showResolveForm, setShowResolveForm] = useState(false);
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [editDescription, setEditDescription] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Sync local state when task changes
   const taskId = task?.id;
@@ -66,6 +85,8 @@ export function TaskDetailSheet({
     );
     setResolutionComment(task.resolution_comment ?? "");
     setShowResolveForm(false);
+    setEditingDescription(false);
+    setShowDeleteConfirm(false);
   }
 
   if (!task) return null;
@@ -182,6 +203,71 @@ export function TaskDetailSheet({
     setSaving(false);
   }
 
+  async function handleDuplicate() {
+    setSaving(true);
+    const supabase = createBrowserSupabaseClient();
+    const { error } = await supabase.from("tasks").insert({
+      space_id: task!.space_id,
+      description: task!.description,
+      priority: task!.priority as TaskPriority,
+      status: "open" as TaskStatus,
+      source: "manual" as const,
+      created_by: task!.created_by,
+      deficiency_id: task!.deficiency_id,
+    });
+
+    if (error) {
+      toast.error("Failed to duplicate task");
+    } else {
+      toast.success("Task duplicated");
+      router.refresh();
+      onClose();
+    }
+    setSaving(false);
+  }
+
+  async function handleUpdateDescription() {
+    if (!editDescription.trim()) {
+      toast.error("Description cannot be empty");
+      return;
+    }
+
+    setSaving(true);
+    const supabase = createBrowserSupabaseClient();
+    const { error } = await supabase
+      .from("tasks")
+      .update({ description: editDescription.trim() })
+      .eq("id", task!.id);
+
+    if (error) {
+      toast.error("Failed to update description");
+    } else {
+      toast.success("Description updated");
+      setEditingDescription(false);
+      router.refresh();
+    }
+    setSaving(false);
+  }
+
+  async function handleDelete() {
+    setSaving(true);
+    const supabase = createBrowserSupabaseClient();
+    const { error } = await supabase
+      .from("tasks")
+      .delete()
+      .eq("id", task!.id);
+
+    if (error) {
+      toast.error("Failed to delete task");
+    } else {
+      toast.success("Task deleted");
+      setShowDeleteConfirm(false);
+      router.refresh();
+      onClose();
+    }
+    setSaving(false);
+  }
+
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-xl">
@@ -201,9 +287,61 @@ export function TaskDetailSheet({
               </span>
             )}
           </div>
-          <SheetTitle className="mt-2 text-left text-h3 text-slate-900">
-            {task.description}
-          </SheetTitle>
+          {editingDescription ? (
+            <div className="mt-2 flex items-center gap-2">
+              <Input
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                className="flex-1 text-h3"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleUpdateDescription();
+                  if (e.key === "Escape") setEditingDescription(false);
+                }}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={handleUpdateDescription}
+                disabled={saving}
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4 text-pass" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setEditingDescription(false)}
+                disabled={saving}
+              >
+                <X className="h-4 w-4 text-slate-400" />
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-2 flex items-start gap-2">
+              <SheetTitle className="flex-1 text-left text-h3 text-slate-900">
+                {task.description}
+              </SheetTitle>
+              {isAdmin && task.status !== "closed" && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => {
+                    setEditDescription(task.description);
+                    setEditingDescription(true);
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5 text-slate-400" />
+                </Button>
+              )}
+            </div>
+          )}
           <SheetDescription className="sr-only">Task details</SheetDescription>
         </SheetHeader>
 
@@ -263,6 +401,31 @@ export function TaskDetailSheet({
               </div>
             )}
           </div>
+
+          {/* Task actions */}
+          {isAdmin && (
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleDuplicate}
+                disabled={saving}
+              >
+                <Copy className="mr-1.5 h-3.5 w-3.5" />
+                Duplicate
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={saving}
+                className="text-fail hover:text-fail"
+              >
+                <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                Delete
+              </Button>
+            </div>
+          )}
 
           {/* Assignment section (admin/supervisor only) */}
           {isAdmin && task.status !== "closed" && (
@@ -405,6 +568,32 @@ export function TaskDetailSheet({
           )}
         </div>
       </SheetContent>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Task</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this task. This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={saving}
+              className="bg-fail text-white hover:bg-red-700"
+            >
+              {saving && (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              )}
+              Delete Task
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }
