@@ -21,6 +21,16 @@ import {
   Camera,
   Info,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { createChecklistItemSchema } from "@/lib/validators/schemas";
 import { toast } from "sonner";
@@ -41,6 +51,7 @@ export function ChecklistItemEditor({
   const [addOpen, setAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<ChecklistItem | null>(null);
   const [loading, setLoading] = useState(false);
+  const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
 
   // Form state
   const [description, setDescription] = useState("");
@@ -148,20 +159,23 @@ export function ChecklistItemEditor({
     router.refresh();
   }
 
-  async function handleDelete(itemId: string) {
+  async function handleDelete() {
+    if (!deleteItemId) return;
     const supabase = createBrowserSupabaseClient();
     const { error } = await supabase
       .from("checklist_items")
       .delete()
-      .eq("id", itemId);
+      .eq("id", deleteItemId);
 
     if (error) {
       toast.error("Failed to delete item");
+      setDeleteItemId(null);
       return;
     }
 
     await incrementVersion();
     toast.success("Item removed");
+    setDeleteItemId(null);
     router.refresh();
   }
 
@@ -242,7 +256,7 @@ export function ChecklistItemEditor({
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7"
-                        onClick={() => handleDelete(item.id)}
+                        onClick={() => setDeleteItemId(item.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5 text-slate-400" />
                       </Button>
@@ -424,6 +438,31 @@ export function ChecklistItemEditor({
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Delete item confirmation */}
+        <AlertDialog
+          open={!!deleteItemId}
+          onOpenChange={(open) => !open && setDeleteItemId(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove Checklist Item</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will remove the item from the template and increment the
+                version. Existing inspection data is not affected.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-fail text-white hover:bg-fail/90"
+              >
+                Remove
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

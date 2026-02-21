@@ -30,7 +30,18 @@ import {
   Pencil,
   Archive,
   ArchiveRestore,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { createChecklistTemplateSchema } from "@/lib/validators/schemas";
 import { toast } from "sonner";
@@ -61,6 +72,8 @@ export function ChecklistManager({
   const [name, setName] = useState("");
   const [renameName, setRenameName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ChecklistTemplate | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const itemsByTemplate = items.reduce<Record<string, ChecklistItem[]>>(
     (acc, item) => {
@@ -216,6 +229,39 @@ export function ChecklistManager({
 
     toast.success(`"${template.name}" restored`);
     router.refresh();
+  }
+
+  async function handleDeleteTemplate() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const supabase = createBrowserSupabaseClient();
+
+    // Unassign spaces that reference this template
+    await supabase
+      .from("spaces")
+      .update({ checklist_template_id: null })
+      .eq("checklist_template_id", deleteTarget.id);
+
+    // Delete all checklist items
+    await supabase
+      .from("checklist_items")
+      .delete()
+      .eq("template_id", deleteTarget.id);
+
+    // Delete the template
+    const { error } = await supabase
+      .from("checklist_templates")
+      .delete()
+      .eq("id", deleteTarget.id);
+
+    if (error) {
+      toast.error("Failed to delete template. It may be referenced by existing inspections.");
+    } else {
+      toast.success(`"${deleteTarget.name}" permanently deleted`);
+      router.refresh();
+    }
+    setDeleteTarget(null);
+    setDeleting(false);
   }
 
   function openRename(template: ChecklistTemplate) {
@@ -398,10 +444,16 @@ export function ChecklistManager({
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => handleArchive(template)}
-                        className="text-fail focus:text-fail"
                       >
                         <Archive className="mr-2 h-4 w-4" />
                         Archive
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setDeleteTarget(template)}
+                        className="text-fail focus:text-fail"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -445,14 +497,25 @@ export function ChecklistManager({
                       </p>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleRestore(template)}
-                  >
-                    <ArchiveRestore className="mr-1.5 h-3.5 w-3.5" />
-                    Restore
-                  </Button>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleRestore(template)}
+                    >
+                      <ArchiveRestore className="mr-1.5 h-3.5 w-3.5" />
+                      Restore
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setDeleteTarget(template)}
+                      className="text-fail hover:text-fail"
+                    >
+                      <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                      Delete
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -498,6 +561,34 @@ export function ChecklistManager({
           </div>
         </section>
       )}
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Template</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete &ldquo;{deleteTarget?.name}&rdquo; and
+              all its checklist items. Spaces using this template will be
+              unassigned. Existing inspection data is preserved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteTemplate}
+              disabled={deleting}
+              className="bg-fail text-white hover:bg-fail/90"
+            >
+              {deleting && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Rename dialog */}
       <Dialog
