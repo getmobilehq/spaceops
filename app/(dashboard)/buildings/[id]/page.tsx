@@ -19,6 +19,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { Building, Floor, UserProfile } from "@/lib/types/helpers";
 import { ArchiveBuildingButton } from "./archive-building-button";
+import { EditBuildingDialog } from "./edit-building-dialog";
 import { ShareDashboardButton } from "./share-dashboard-button";
 import { formatSqft, formatRelativeTime } from "@/lib/utils/format";
 import { FloorManager } from "./floor-manager";
@@ -124,6 +125,7 @@ export default async function BuildingDetailPage({
           </div>
           {profile.role === "admin" && (
             <div className="flex items-center gap-2">
+              <EditBuildingDialog building={building} />
               <ShareDashboardButton buildingId={building.id} />
               <ArchiveBuildingButton buildingId={building.id} />
             </div>

@@ -10,14 +10,28 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { User, MoreVertical, Shield, Ban, CheckCircle2, Building2 } from "lucide-react";
+import { User, MoreVertical, Shield, Ban, CheckCircle2, Building2, Pencil, Trash2, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { updateUserSchema } from "@/lib/validators/schemas";
 import { toast } from "sonner";
 import type { UserProfile, Building, BuildingAssignment } from "@/lib/types/helpers";
 import type { UserRole } from "@/lib/types/database";
@@ -41,6 +55,12 @@ export function UserList({ users, currentUserId, buildings, assignments }: UserL
   const [assignDialogUser, setAssignDialogUser] = useState<UserProfile | null>(null);
   const [selectedBuildingIds, setSelectedBuildingIds] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [editDialogUser, setEditDialogUser] = useState<UserProfile | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [removeUserId, setRemoveUserId] = useState<string | null>(null);
+  const [removing, setRemoving] = useState(false);
 
   // Build a map: userId -> buildingId[]
   const userAssignments: Record<string, string[]> = {};
@@ -124,6 +144,72 @@ export function UserList({ users, currentUserId, buildings, assignments }: UserL
     router.refresh();
   }
 
+  function openEditDialog(user: UserProfile) {
+    setEditDialogUser(user);
+    setEditName(user.name);
+    setEditPhone(user.phone ?? "");
+  }
+
+  async function handleEditUser() {
+    if (!editDialogUser) return;
+
+    const parsed = updateUserSchema.safeParse({
+      name: editName,
+      phone: editPhone || undefined,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
+      return;
+    }
+
+    setEditSaving(true);
+    const supabase = createBrowserSupabaseClient();
+    const { error } = await supabase
+      .from("users")
+      .update({ name: editName, phone: editPhone || null })
+      .eq("id", editDialogUser.id);
+
+    setEditSaving(false);
+
+    if (error) {
+      toast.error("Failed to update user details");
+      return;
+    }
+
+    toast.success("User details updated");
+    setEditDialogUser(null);
+    router.refresh();
+  }
+
+  async function handleRemoveUser() {
+    if (!removeUserId) return;
+
+    setRemoving(true);
+    const supabase = createBrowserSupabaseClient();
+    const { error } = await supabase
+      .from("users")
+      .delete()
+      .eq("id", removeUserId);
+
+    setRemoving(false);
+
+    if (error) {
+      if (error.code === "23503") {
+        toast.error(
+          "Cannot remove user — they have inspection or task records. Deactivate instead."
+        );
+      } else {
+        toast.error("Failed to remove user");
+      }
+      setRemoveUserId(null);
+      return;
+    }
+
+    toast.success("User removed from organization");
+    setRemoveUserId(null);
+    router.refresh();
+  }
+
   async function toggleActive(userId: string, currentlyActive: boolean) {
     const supabase = createBrowserSupabaseClient();
     const { error } = await supabase
@@ -198,6 +284,10 @@ export function UserList({ users, currentUserId, buildings, assignments }: UserL
                         Assign Buildings
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem onClick={() => openEditDialog(u)}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit Details
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() =>
                         updateRole(
@@ -225,6 +315,14 @@ export function UserList({ users, currentUserId, buildings, assignments }: UserL
                           Activate
                         </>
                       )}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setRemoveUserId(u.id)}
+                      className="text-fail focus:text-fail"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Remove from Organization
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -289,6 +387,88 @@ export function UserList({ users, currentUserId, buildings, assignments }: UserL
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit User Details Dialog */}
+      <Dialog
+        open={!!editDialogUser}
+        onOpenChange={(open) => {
+          if (!open) setEditDialogUser(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit User Details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <Label>Name</Label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Full name"
+              />
+            </div>
+            <div>
+              <Label>Phone</Label>
+              <Input
+                type="tel"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                placeholder="+1 555 000 0000"
+              />
+            </div>
+            <p className="text-caption text-slate-400">
+              Email cannot be changed (it is the login identity).
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setEditDialogUser(null)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleEditUser} disabled={editSaving}>
+                {editSaving && (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                )}
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove User AlertDialog */}
+      <AlertDialog
+        open={!!removeUserId}
+        onOpenChange={(open) => {
+          if (!open) setRemoveUserId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove User from Organization</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove the user and all their building
+              assignments. This action cannot be undone. If the user has
+              inspection or task records, consider deactivating them instead.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRemoveUser}
+              disabled={removing}
+              className="bg-fail text-white hover:bg-red-700"
+            >
+              {removing && (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              )}
+              Remove User
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

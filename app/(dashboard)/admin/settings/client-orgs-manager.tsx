@@ -21,6 +21,7 @@ import {
   Loader2,
   Building2,
   Link2,
+  Pencil,
 } from "lucide-react";
 import type { ClientOrg, ClientBuildingLink, Building } from "@/lib/types/helpers";
 
@@ -44,6 +45,10 @@ export function ClientOrgsManager({
   const [contactEmail, setContactEmail] = useState("");
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editOrgId, setEditOrgId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editContactEmail, setEditContactEmail] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
   async function handleCreate() {
     const result = createClientOrgSchema.safeParse({
@@ -94,6 +99,43 @@ export function ClientOrgsManager({
       router.refresh();
     }
     setDeletingId(null);
+  }
+
+  function openEditDialog(org: ClientOrg) {
+    setEditOrgId(org.id);
+    setEditName(org.name);
+    setEditContactEmail(org.contact_email ?? "");
+  }
+
+  async function handleEdit() {
+    if (!editOrgId) return;
+
+    const result = createClientOrgSchema.safeParse({
+      name: editName,
+      contact_email: editContactEmail || undefined,
+    });
+    if (!result.success) {
+      toast.error(result.error.issues[0].message);
+      return;
+    }
+
+    setEditSaving(true);
+    const supabase = createBrowserSupabaseClient();
+    const { error } = await supabase
+      .from("client_orgs")
+      .update({ name: editName, contact_email: editContactEmail || null })
+      .eq("id", editOrgId);
+
+    setEditSaving(false);
+
+    if (error) {
+      toast.error("Failed to update client organization");
+      return;
+    }
+
+    toast.success("Client organization updated");
+    setEditOrgId(null);
+    router.refresh();
   }
 
   function getLinkedBuildingIds(clientOrgId: string): string[] {
@@ -200,6 +242,14 @@ export function ClientOrgsManager({
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditDialog(org)}
+                    >
+                      <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                      Edit
+                    </Button>
                     <Dialog
                       open={linkOrgId === org.id}
                       onOpenChange={(open) =>
@@ -272,6 +322,48 @@ export function ClientOrgsManager({
           })}
         </div>
       )}
+
+      {/* Edit Client Org Dialog */}
+      <Dialog
+        open={!!editOrgId}
+        onOpenChange={(open) => {
+          if (!open) setEditOrgId(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Client Organization</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <Label>Client Name</Label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="e.g., Acme Corporation"
+              />
+            </div>
+            <div>
+              <Label>Contact Email</Label>
+              <Input
+                type="email"
+                value={editContactEmail}
+                onChange={(e) => setEditContactEmail(e.target.value)}
+                placeholder="client@example.com"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditOrgId(null)}>
+                Cancel
+              </Button>
+              <Button onClick={handleEdit} disabled={editSaving}>
+                {editSaving && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
