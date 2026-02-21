@@ -98,7 +98,8 @@ export default async function ClientDashboardPage() {
 
   return (
     <div className="p-4 lg:mx-auto lg:max-w-7xl lg:px-6 lg:py-6">
-      <div className="mb-6">
+      <div className="mb-8">
+        <p className="text-overline text-slate-400">Portfolio</p>
         <h1 className="text-h1 text-slate-900">{clientOrgName}</h1>
         <p className="mt-1 text-sm-body text-slate-500">Portfolio Dashboard</p>
       </div>
@@ -109,27 +110,31 @@ export default async function ClientDashboardPage() {
           label="Buildings"
           value={totalBuildings}
           icon={Building2}
+          accent="teal"
         />
         <KpiCard
           label="Avg Pass Rate"
           value={avgPassRate !== null ? `${avgPassRate}%` : "--"}
           icon={TrendingUp}
+          accent="blue"
         />
         <KpiCard
           label="Open Deficiencies"
           value={totalDeficiencies}
           icon={AlertTriangle}
+          accent="red"
         />
         <KpiCard
           label="Avg Compliance"
           value={avgCompliance !== null ? `${avgCompliance}%` : "--"}
           icon={ShieldCheck}
+          accent="amber"
         />
       </div>
 
       {/* Building Cards */}
       <div className="mt-6">
-        <h2 className="mb-3 text-h2 text-slate-900">Buildings</h2>
+        <h2 className="mb-3 border-b border-slate-100 pb-2 text-h2 text-slate-900">Buildings</h2>
         {buildingStats.length === 0 ? (
           <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center">
             <Building2 className="mx-auto mb-3 h-10 w-10 text-slate-400" />

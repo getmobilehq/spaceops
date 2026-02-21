@@ -23,11 +23,11 @@ export function BuildingCard({
 }: BuildingCardProps) {
   return (
     <Link href={`/buildings/${id}`}>
-      <div className="rounded-lg border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300">
+      <div className="rounded-lg bg-white p-4 ring-1 ring-slate-200/60 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-              <Building2 className="h-4 w-4 text-slate-500" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50">
+              <Building2 className="h-5 w-5 text-primary-600" />
             </div>
             <div className="min-w-0">
               <p className="truncate text-body font-semibold text-slate-900">
@@ -46,7 +46,7 @@ export function BuildingCard({
         <div className="mt-3 flex items-center gap-3">
           {passRate !== null && (
             <span
-              className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+              className={`rounded-full px-2 py-0.5 text-xs font-bold ${
                 passRate >= 90
                   ? "bg-pass-bg text-pass"
                   : passRate >= 70

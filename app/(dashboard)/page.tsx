@@ -118,8 +118,9 @@ export default async function HomePage() {
 
   return (
     <div className="p-4 lg:mx-auto lg:max-w-7xl lg:px-6 lg:py-6">
-      <div className="mb-6">
-        <h1 className="text-h1 text-slate-900">
+      <div className="mb-8">
+        <p className="text-overline text-slate-400">Dashboard</p>
+        <h1 className="text-display text-slate-900">
           Welcome, {profile.name.split(" ")[0]}
         </h1>
         <p className="mt-1 text-sm-body text-slate-500">
@@ -133,28 +134,32 @@ export default async function HomePage() {
           label="Buildings"
           value={buildings.length}
           icon={Building2}
+          accent="teal"
         />
         <KpiCard
           label="Inspections Today"
           value={inspectionCount}
           icon={ClipboardList}
+          accent="blue"
         />
         <KpiCard
           label="Open Deficiencies"
           value={deficiencyCount}
           icon={AlertTriangle}
+          accent="red"
         />
         <KpiCard
           label="Active Staff"
           value={staffCount}
           icon={Users}
+          accent="amber"
         />
       </div>
 
       {/* Admin Quick Actions */}
       {profile.role === "admin" && (
         <div className="mt-6">
-          <h2 className="mb-3 text-h3 text-slate-900">Admin Quick Actions</h2>
+          <h2 className="mb-3 border-b border-slate-100 pb-2 text-h3 text-slate-900">Admin Quick Actions</h2>
           <div className="grid grid-cols-3 gap-3">
             <QuickActionCard
               icon={Users}
@@ -180,7 +185,7 @@ export default async function HomePage() {
       {/* Overdue Tasks Alert */}
       {overdueTasks.length > 0 && (
         <div className="mt-6">
-          <div className="mb-3 flex items-center gap-2">
+          <div className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-2">
             <Clock className="h-4 w-4 text-fail" />
             <h2 className="text-h3 text-slate-900">Overdue Tasks</h2>
           </div>
@@ -210,7 +215,7 @@ export default async function HomePage() {
 
       {/* Buildings */}
       <div className="mt-6">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2">
           <h2 className="text-h2 text-slate-900">Buildings</h2>
           <Link
             href="/buildings"

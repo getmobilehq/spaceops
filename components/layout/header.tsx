@@ -68,7 +68,7 @@ export function Header({ title }: HeaderProps) {
   const showBackNav = sectionTitle && sectionTitle !== "More";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
+    <header className="sticky top-0 z-40 bg-white/80 shadow-sm backdrop-blur-md">
       <div className="flex h-14 items-center justify-between px-4 lg:px-6">
         <div className="flex items-center gap-3">
           {showBackNav ? (

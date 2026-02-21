@@ -103,9 +103,10 @@ export default async function BuildingDetailPage({
         Buildings
       </Link>
 
-      <div className="mb-6">
+      <div className="mb-8">
         <div className="flex items-start justify-between">
           <div>
+            <p className="text-overline text-slate-400">Building</p>
             <h1 className="text-h1 text-slate-900">{building.name}</h1>
             {(building.street || building.city) && (
               <div className="mt-1 flex items-center gap-1 text-sm-body text-slate-500">
@@ -142,21 +143,25 @@ export default async function BuildingDetailPage({
                 label="Today's Pass Rate"
                 value={stats.passRate !== null ? `${stats.passRate}%` : "--"}
                 icon={TrendingUp}
+                accent="teal"
               />
               <KpiCard
                 label="Inspections Today"
                 value={stats.inspectedToday}
                 icon={ClipboardCheck}
+                accent="blue"
               />
               <KpiCard
                 label="Open Deficiencies"
                 value={stats.openDeficiencyCount}
                 icon={AlertTriangle}
+                accent="red"
               />
               <KpiCard
                 label="Open Tasks"
                 value={stats.openTaskCount}
                 icon={ListTodo}
+                accent="amber"
               />
             </div>
           </section>
@@ -164,7 +169,7 @@ export default async function BuildingDetailPage({
 
         {/* Floors */}
         <section>
-          <div className="mb-3 flex items-center gap-2">
+          <div className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-2">
             <Layers className="h-5 w-5 text-slate-400" />
             <h2 className="text-h2 text-slate-900">Floors</h2>
           </div>
@@ -198,7 +203,7 @@ export default async function BuildingDetailPage({
 
         {/* Spaces */}
         <section>
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2">
             <div className="flex items-center gap-2">
               <LayoutGrid className="h-5 w-5 text-slate-400" />
               <h2 className="text-h2 text-slate-900">Spaces</h2>
@@ -239,7 +244,7 @@ export default async function BuildingDetailPage({
         {/* Recent Inspections */}
         {recentInspections.length > 0 && (
           <section>
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2">
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-slate-400" />
                 <h2 className="text-h2 text-slate-900">Recent Inspections</h2>

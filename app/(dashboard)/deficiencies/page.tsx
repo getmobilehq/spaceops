@@ -89,7 +89,10 @@ export default async function DeficienciesPage() {
   return (
     <div className="p-4 lg:mx-auto lg:max-w-7xl lg:px-6 lg:py-6">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-h1 text-slate-900">Deficiencies</h1>
+        <div>
+          <p className="text-overline text-slate-400">Quality Control</p>
+          <h1 className="text-h1 text-slate-900">Deficiencies</h1>
+        </div>
         <ExportButton exportType="deficiencies" />
       </div>
       <DeficiencyList

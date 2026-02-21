@@ -179,7 +179,10 @@ export function TaskList({
     <div>
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-h1 text-slate-900">Tasks</h1>
+        <div>
+          <p className="text-overline text-slate-400">Management</p>
+          <h1 className="text-h1 text-slate-900">Tasks</h1>
+        </div>
         <div className="flex items-center gap-2">
           <ExportButton
             exportType="tasks"

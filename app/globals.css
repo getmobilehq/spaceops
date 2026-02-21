@@ -81,16 +81,17 @@
   --color-pin-grey: #9CA3AF;
 
   /* Typography */
-  --font-size-display: 32px;
-  --font-size-display--line-height: 1.2;
-  --font-size-display--letter-spacing: -0.5px;
+  --font-size-display: 40px;
+  --font-size-display--line-height: 1.1;
+  --font-size-display--letter-spacing: -1px;
 
-  --font-size-h1: 24px;
-  --font-size-h1--line-height: 1.3;
-  --font-size-h1--letter-spacing: -0.3px;
+  --font-size-h1: 30px;
+  --font-size-h1--line-height: 1.2;
+  --font-size-h1--letter-spacing: -0.6px;
 
-  --font-size-h2: 20px;
-  --font-size-h2--line-height: 1.4;
+  --font-size-h2: 22px;
+  --font-size-h2--line-height: 1.3;
+  --font-size-h2--letter-spacing: -0.3px;
 
   --font-size-h3: 16px;
   --font-size-h3--line-height: 1.5;
@@ -107,9 +108,9 @@
   --font-size-label: 11px;
   --font-size-label--line-height: 1.4;
 
-  --font-size-kpi: 28px;
-  --font-size-kpi--line-height: 1.2;
-  --font-size-kpi--letter-spacing: -0.5px;
+  --font-size-kpi: 36px;
+  --font-size-kpi--line-height: 1.1;
+  --font-size-kpi--letter-spacing: -1px;
 }
 
 :root {
@@ -146,22 +147,23 @@
 
 /* Utility classes for typography weights */
 @utility text-display {
-  font-size: 32px;
-  line-height: 1.2;
-  letter-spacing: -0.5px;
-  font-weight: 700;
+  font-size: 40px;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  font-weight: 800;
 }
 
 @utility text-h1 {
-  font-size: 24px;
-  line-height: 1.3;
-  letter-spacing: -0.3px;
+  font-size: 30px;
+  line-height: 1.2;
+  letter-spacing: -0.6px;
   font-weight: 700;
 }
 
 @utility text-h2 {
-  font-size: 20px;
-  line-height: 1.4;
+  font-size: 22px;
+  line-height: 1.3;
+  letter-spacing: -0.3px;
   font-weight: 600;
 }
 
@@ -198,8 +200,16 @@
 }
 
 @utility text-kpi {
-  font-size: 28px;
-  line-height: 1.2;
-  letter-spacing: -0.5px;
-  font-weight: 700;
+  font-size: 36px;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  font-weight: 800;
+}
+
+@utility text-overline {
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: 0.75px;
+  text-transform: uppercase;
 }
