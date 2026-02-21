@@ -19,6 +19,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { Building, Floor, UserProfile } from "@/lib/types/helpers";
 import { ArchiveBuildingButton } from "./archive-building-button";
+import { DeleteBuildingButton } from "./delete-building-button";
 import { EditBuildingDialog } from "./edit-building-dialog";
 import { ShareDashboardButton } from "./share-dashboard-button";
 import { formatSqft, formatRelativeTime } from "@/lib/utils/format";
@@ -129,6 +130,7 @@ export default async function BuildingDetailPage({
               <EditBuildingDialog building={building} />
               <ShareDashboardButton buildingId={building.id} />
               <ArchiveBuildingButton buildingId={building.id} />
+              <DeleteBuildingButton buildingId={building.id} buildingName={building.name} />
             </div>
           )}
         </div>

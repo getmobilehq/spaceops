@@ -3,8 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Building2, MapPin, Archive, RotateCcw } from "lucide-react";
+import { Building2, MapPin, Archive, RotateCcw, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { formatSqft } from "@/lib/utils/format";
@@ -23,6 +33,95 @@ export function BuildingListClient({
 }: BuildingListClientProps) {
   const router = useRouter();
   const [showArchived, setShowArchived] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Building | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDeleteBuilding() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const supabase = createBrowserSupabaseClient();
+    const buildingId = deleteTarget.id;
+
+    try {
+      // Get floors
+      const { data: floors } = await supabase
+        .from("floors")
+        .select("id")
+        .eq("building_id", buildingId);
+      const floorIds = (floors ?? []).map((f: { id: string }) => f.id);
+
+      // Get spaces
+      let spaceIds: string[] = [];
+      if (floorIds.length > 0) {
+        const { data: spaces } = await supabase
+          .from("spaces")
+          .select("id")
+          .in("floor_id", floorIds);
+        spaceIds = (spaces ?? []).map((s: { id: string }) => s.id);
+      }
+
+      // Cascade space records
+      if (spaceIds.length > 0) {
+        const { data: inspections } = await supabase
+          .from("inspections")
+          .select("id")
+          .in("space_id", spaceIds);
+        const inspectionIds = (inspections ?? []).map((i: { id: string }) => i.id);
+
+        if (inspectionIds.length > 0) {
+          const { data: responses } = await supabase
+            .from("inspection_responses")
+            .select("id")
+            .in("inspection_id", inspectionIds);
+          const responseIds = (responses ?? []).map((r: { id: string }) => r.id);
+
+          if (responseIds.length > 0) {
+            await supabase.from("response_photos").delete().in("response_id", responseIds);
+            const { data: deficiencies } = await supabase
+              .from("deficiencies")
+              .select("id")
+              .in("response_id", responseIds);
+            const deficiencyIds = (deficiencies ?? []).map((d: { id: string }) => d.id);
+            if (deficiencyIds.length > 0) {
+              await supabase.from("tasks").delete().in("deficiency_id", deficiencyIds);
+              await supabase.from("deficiencies").delete().in("id", deficiencyIds);
+            }
+          }
+
+          await supabase.from("inspection_responses").delete().in("inspection_id", inspectionIds);
+          await supabase.from("inspections").delete().in("id", inspectionIds);
+        }
+
+        await supabase.from("tasks").delete().in("space_id", spaceIds);
+        await supabase.from("qr_codes").delete().in("space_id", spaceIds);
+        await supabase.from("spaces").delete().in("id", spaceIds);
+      }
+
+      if (floorIds.length > 0) {
+        await supabase.from("floor_plans").delete().in("floor_id", floorIds);
+        await supabase.from("floors").delete().in("id", floorIds);
+      }
+
+      await supabase.from("building_assignments").delete().eq("building_id", buildingId);
+      await supabase.from("client_building_links").delete().eq("building_id", buildingId);
+      await supabase.from("shared_dashboards").delete().eq("building_id", buildingId);
+      await supabase.from("report_configs").delete().eq("building_id", buildingId);
+
+      const { error } = await supabase.from("buildings").delete().eq("id", buildingId);
+
+      if (error) {
+        toast.error("Failed to delete building");
+      } else {
+        toast.success(`"${deleteTarget.name}" permanently deleted`);
+        router.refresh();
+      }
+    } catch {
+      toast.error("Failed to delete building");
+    }
+
+    setDeleteTarget(null);
+    setDeleting(false);
+  }
 
   async function restoreBuilding(buildingId: string) {
     const supabase = createBrowserSupabaseClient();
@@ -119,20 +218,59 @@ export function BuildingListClient({
                       <p className="text-caption text-slate-400">{building.city}</p>
                     )}
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => restoreBuilding(building.id)}
-                  >
-                    <RotateCcw className="mr-1.5 h-3 w-3" />
-                    Restore
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => restoreBuilding(building.id)}
+                    >
+                      <RotateCcw className="mr-1.5 h-3 w-3" />
+                      Restore
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDeleteTarget(building)}
+                      className="text-fail hover:text-fail"
+                    >
+                      <Trash2 className="mr-1.5 h-3 w-3" />
+                      Delete
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </div>
       )}
+
+      {/* Delete confirmation */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(v) => !deleting && (!v && setDeleteTarget(null))}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Building</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete &ldquo;{deleteTarget?.name}&rdquo; and
+              all its floors, spaces, inspections, deficiencies, and tasks. This
+              action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteBuilding}
+              disabled={deleting}
+              className="bg-fail text-white hover:bg-fail/90"
+            >
+              {deleting && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
