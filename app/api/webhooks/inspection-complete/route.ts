@@ -229,18 +229,37 @@ export async function POST(req: NextRequest) {
     };
 
     // Render PDF
-    const pdfElement = React.createElement(InspectionReport, {
-      data: reportData,
-    });
-    const pdfBuffer = await renderToBuffer(pdfElement as never);
+    let pdfBuffer: Buffer;
+    try {
+      const pdfElement = React.createElement(InspectionReport, {
+        data: reportData,
+      });
+      pdfBuffer = await renderToBuffer(pdfElement as never);
+    } catch (pdfErr) {
+      console.error("PDF render error:", pdfErr);
+      Sentry.captureException(pdfErr, { tags: { context: "webhook-pdf" } });
+      return NextResponse.json(
+        { triggered: false, reason: "pdf_render_failed" },
+        { status: 200 }
+      );
+    }
 
     // Send email
-    await sendReportEmail({
-      to: recipientEmails,
-      buildingName: building.name,
-      pdfBuffer: new Uint8Array(pdfBuffer),
-      reportDate,
-    });
+    try {
+      await sendReportEmail({
+        to: recipientEmails,
+        buildingName: building.name,
+        pdfBuffer: new Uint8Array(pdfBuffer),
+        reportDate,
+      });
+    } catch (emailErr) {
+      console.error("Email send error:", emailErr);
+      Sentry.captureException(emailErr, { tags: { context: "webhook-email" } });
+      return NextResponse.json(
+        { triggered: false, reason: "email_send_failed" },
+        { status: 200 }
+      );
+    }
 
     // Update last_sent_at
     await supabase
